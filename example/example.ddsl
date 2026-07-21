@@ -1,0 +1,68 @@
+[^"res://example/dialogBox.tscn"] # sets dialog box style
+
+testdict = {
+	a = 5,
+	b = "str",
+	c = false,
+}
+
+test = ^"res://icon.svg"
+
+test: "This is a test message."
+test: "This is a next, slightly longer, test message."
+{ full = true } # dict after a message is used
+				# to pass options to the dialog box
+test: "Test"
+
+a = Vector2(5, 7)
+b = Vector3(4, 1, 3)
+
+test: Vector3(a) + b
+
+Complex = ^"res://example/complex.gd"
+
+z1 = Complex(1, 4)
+z2 = Complex(5, -1)
+
+test: "z1 = " + str(z1) + "\nz2 = " + str(z2)
+
+test: "z1 + z2 = " + str(z1 + z2)
+test: "z1 * z2 = " + str(z1 * z2)
+test: "z1ᶻ² = " + str(z1 ** z2)
+
+test: "Question" {
+	autoconfirm = true
+}
+<- options
+- "Answer"
+	test: "No test"
+- "No answer"
+	test: "Test"
+
+test: "Which?" {
+	autoconfirm = true
+}
+flavor <- option
+- "Cinnamon"
+	
+- "Chocolate"
+	
+- "Banana"
+	
+- "Plain"
+	
+
+test: "Topping?" {
+	autoconfirm = true
+}
+topping <- option
+- "Cinnamon" ? _ != flavor
+	
+- "Chocolate" ? _ != flavor
+	
+- "Banana" ? _ != flavor
+	
+- "Plain" ? _ != flavor
+	
+
+test: "Selected " + flavor + " with " + topping
