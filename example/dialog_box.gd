@@ -19,40 +19,42 @@ var optionValues = []
 var canInputOption = false
 var autoconfirm: bool = false
 
-@onready var container = $container
-@onready var outputText = $container/text
-@onready var outputSprite = $sprite
+@onready var container = $container/text
+@onready var outputText = $container/text/text
+@onready var outputSprite = $container/sprite
 @onready var outputSkipTimer = $skipTimer
 
 @onready var options = [
 	[],
 	[
-		$container/output1/label1
+		$container/text/output1/label1
 	], [
-		$container/output2/label1,
-		$container/output2/label2,
+		$container/text/output2/label1,
+		$container/text/output2/label2,
 	], [
-		$container/output3/label1,
-		$container/output3/label2,
-		$container/output3/label3,
+		$container/text/output3/label1,
+		$container/text/output3/label2,
+		$container/text/output3/label3,
 	], [
-		$container/output4/row1/label1,
-		$container/output4/row1/label2,
-		$container/output4/row2/label3,
-		$container/output4/row2/label4
+		$container/text/output4/row1/label1,
+		$container/text/output4/row1/label2,
+		$container/text/output4/row2/label3,
+		$container/text/output4/row2/label4
 	]
 ]
 
 @onready var optionContainers = [
 	null,
-	$container/output1,
-	$container/output2,
-	$container/output3,
-	$container/output4
+	$container/text/output1,
+	$container/text/output2,
+	$container/text/output3,
+	$container/text/output4
 ]
 
 func _ready():
-	outputSprite.size.x = outputSprite.size.y
+	outputSprite.set_deferred("size", Vector2(
+		outputSprite.size.y, outputSprite.size.y
+	))
 
 func input(type, branches: Array, _options: Dictionary = {}):
 	if type is Dialog.OptionsInput:
@@ -74,21 +76,20 @@ func input(type, branches: Array, _options: Dictionary = {}):
 
 func output(sprite, text: String, _options: Dictionary = {}):
 	if isOutputting:
-		return
 		push_error("Trying to output while already outputting")
-	#prints(sprite, text, _options)
+		return
 	outputText.text = ""
 	if sprite != null:
 		outputSprite.texture = sprite
-		container.offset_left = 40 + outputSprite.size.x
 		outputSprite.show()
 	else:
-		container.offset_left = 20
 		outputSprite.hide()
 	threshold = DEFAULT_TIMER_THRESHOLD
 	isOutputting = true
 	outputString = text
 	outputSplit = text.split("")
+	
+	## makes input options appear with the previous text for prompting
 	if _options.get("full", false):
 		isFinishedOutputting = true
 		outputText.text = outputString
@@ -122,10 +123,6 @@ func _process(delta):
 				outputText.text = outputString
 	if isInputting:
 		if isOptions:
-			#var dir = Input.get_vector(
-				#"dialog_left", "dialog_right",
-				#"dialog_up", "dialog_down"
-			#)
 			var dir = Vector2(
 				int(Input.is_action_just_pressed("dialog_right"))
 				-
@@ -136,6 +133,8 @@ func _process(delta):
 				int(Input.is_action_just_pressed("dialog_up"))
 			)
 			processOptionDirection(dir)
+			
+			## HACK: ensure option input cannot be accidentally skipped
 			if canInputOption and Input.is_action_just_pressed("dialog_confirm"):
 				cleanupOptions()
 			canInputOption = true

@@ -36,7 +36,7 @@ class Complex:
 			return Complex.new(real * other, imag * other)
 		return null
 	
-	func _truediv(other):
+	func _div(other):
 		if other is Complex:
 			var denom = other.real * other.real + other.imag * other.imag
 			return Complex.new(
@@ -47,8 +47,8 @@ class Complex:
 			return Complex.new(real / other, imag / other)
 		return null
 	
-	func _div(other):  # Floored division
-		var result = _truediv(other)
+	func _floordiv(other):
+		var result = _div(other)
 		if result is Complex:
 			return Complex.new(floor(result.real), floor(result.imag))
 		return null
@@ -61,10 +61,10 @@ class Complex:
 			return fmod(real, other)
 		return null
 	
-	func _addr(other): return _add(other)
-	func _subr(other): return Complex.new(other - real, -imag)
-	func _mulr(other): return _mul(other)
-	func _truedivr(other):
+	func _add_r(other): return _add(other)
+	func _sub_r(other): return Complex.new(other - real, -imag)
+	func _mul_r(other): return _mul(other)
+	func _div_r(other):
 		if other is Complex:
 			return other._truediv(self)
 		elif typeof(other) in [TYPE_INT, TYPE_FLOAT]:
@@ -75,13 +75,13 @@ class Complex:
 			)
 		return null
 	
-	func _divr(other):
-		var result = _truedivr(other)
+	func _floordiv_r(other):
+		var result = _div(other)
 		if result is Complex:
 			return Complex.new(floor(result.real), floor(result.imag))
 		return null
 	
-	func _modr(other):
+	func _mod_r(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return fmod(other.real, real)
@@ -89,7 +89,6 @@ class Complex:
 			return fmod(other, real)
 		return null
 	
-	# ----- Comparisons -----
 	func _eq(other):
 		if other is Complex:
 			return real == other.real and imag == other.imag
@@ -97,15 +96,18 @@ class Complex:
 			return imag == 0 and real == other
 		return null
 	
-	func _eqr(other): return _eq(other)
+	func _eq_r(other): return _eq(other)
 	
-	func _neq(other):
+	func _ne(other):
 		var eq = _eq(other)
-		return null if eq == null else not eq
+		#return null if eq == null else not eq
+		if eq == null:
+			return null
+		return not eq
 	
-	func _neqr(other): return _neq(other)
+	func _ne_r(other): return _ne(other)
 	
-	func _less(other):
+	func _lt(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return real < other.real
@@ -113,7 +115,7 @@ class Complex:
 			return real < other
 		return null
 	
-	func _lessr(other):
+	func _lt_r(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return other.real < real
@@ -121,7 +123,7 @@ class Complex:
 			return other < real
 		return null
 	
-	func _greater(other):
+	func _gt(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return real > other.real
@@ -129,7 +131,7 @@ class Complex:
 			return real > other
 		return null
 	
-	func _greaterr(other):
+	func _gt_r(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return other.real > real
@@ -137,7 +139,7 @@ class Complex:
 			return other > real
 		return null
 	
-	func _lesseq(other):
+	func _le(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return real <= other.real
@@ -145,7 +147,7 @@ class Complex:
 			return real <= other
 		return null
 	
-	func _lesseqr(other):
+	func _le_r(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return other.real <= real
@@ -153,7 +155,7 @@ class Complex:
 			return other <= real
 		return null
 	
-	func _greatereq(other):
+	func _ge(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return real >= other.real
@@ -161,7 +163,7 @@ class Complex:
 			return real >= other
 		return null
 	
-	func _greatereqr(other):
+	func _ge_r(other):
 		if imag != 0: return null
 		if other is Complex and other.imag == 0:
 			return other.real >= real

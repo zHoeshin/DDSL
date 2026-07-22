@@ -8,7 +8,7 @@ const OP = {
 
 		"**": "_pow", "*/": "_root",
 
-		"*": "_mul", "/": "_div", "%": "_mod", "//": "_truediv",
+		"*": "_mul", "/": "_div", "%": "_mod", "//": "_floordiv",
 
 		"+": "_add", "-": "_sub",
 
@@ -97,7 +97,7 @@ class Interpreter:
 		"var_to_bytes": var_to_bytes, "var_to_str": var_to_str, "wrapf": wrapf, "wrapi": wrapi,
 		"printerr": printerr, "push_warning": push_warning, "push_error": push_error, "prints": prints,
 		"printraw": printraw, "print_rich": print_rich,
-		"true": true, "false": false, "null": null
+		"true": true, "false": false, "null": null, "Time": Time
 	}
 	static var constructors = {
 		"bool": func(...args):
@@ -529,7 +529,10 @@ class Interpreter:
 						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
 						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
 						return bool_a || bool_b
-					"^^": return bool(a) != bool(b)
+					"^^":
+						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
+						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
+						return bool(bool_a) != bool(bool_b)
 					"&": return a & b
 					"^": return a ^ b
 					"|": return a | b

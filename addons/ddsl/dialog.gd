@@ -1,11 +1,16 @@
-
-
 extends CanvasLayer
 
 static var _tokenize = null
 static var _parser = null
 
 static var _Interpreter = null
+
+## Emitted before starting dialog
+signal dialogStarted
+
+## Emitted after ending dialog
+signal dialogEnded
+
 
 static var _globals: Dictionary = {
 	"options": OptionsInput.new(),
@@ -26,16 +31,19 @@ func getGlobal(name: String, default: Variant = null):
 ## [code]dialog[/code]: path to the dialog resource in DDSL syntax[br]
 ## [code]callback[/code]: callable executed when dialog finishes[br][br]
 ## [code]return[/code]: returns Dictionary[String, Variant] of internal interpreter variables[br]
-func start(dialog: String, callback: Callable = Callable()):
+func start(dialog: String, callback: Callable = Callable()) -> Dictionary:
 	var text = FileAccess.get_file_as_string(dialog)
 	var err = FileAccess.get_open_error()
 	if err != OK:
-		return
+		return {}
 	var parsed = _parse(text)
 	#print("!!! ", parsed)
+	dialogStarted.emit()
 	var interpreter = _Interpreter.new()
 	await interpreter.start(parsed)
-	callback.call(interpreter.variables)
+	if callback.is_valid():
+		callback.call(interpreter.variables)
+	dialogEnded.emit()
 	return interpreter.variables
 
 
@@ -43,10 +51,12 @@ func start(dialog: String, callback: Callable = Callable()):
 ## [code]dialog[/code]: raw dialog script in DDSL syntax[br]
 ## [code]callback[/code]: callable executed when dialog finishes[br][br]
 ## [code]return[/code]: returns Dictionary[String, Variant] of internal interpreter variables[br]
-func startFromSource(source: String, callback: Callable = Callable()):
+func startFromSource(source: String, callback: Callable = Callable()) -> Dictionary:
 	var parsed = _parse(source)
+	dialogStarted.emit()
 	var interpreter = _Interpreter.new()
 	await interpreter.start(parsed)
+	dialogEnded.emit()
 	return interpreter.variables
 
 ## Sets the current dialog box style[br][br]
