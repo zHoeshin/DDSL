@@ -15,6 +15,7 @@ const colors = {
 	"numdec": Color(0.627, 1.0, 0.878),
 	"numint": Color(0.627, 1.0, 0.878),
 	"string": Color(1.0, 0.929, 0.627),
+	"trstring": Color(1.0, 0.776, 0.627, 1.0),
 	"varid": Color(0.804, 0.808, 0.824),
 	"vartemp": Color(0.487, 0.658, 0.961),
 	"varfile": Color(0.927, 0.754, 0.616),

@@ -76,6 +76,10 @@ dialog_right={
 
 pointing/emulate_touch_from_mouse=true
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://example/translations.en.translation")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

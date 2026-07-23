@@ -8,6 +8,8 @@ testdict = {
 
 test = ^"res://icon.svg"
 
+test: tr"translation.text"
+
 test: "This is a test message."
 test: "This is a next, slightly longer, test message."
 { full = true } # dict after a message is used
@@ -44,13 +46,9 @@ test: "Which?" {
 }
 flavor <- option
 - "Cinnamon"
-	
 - "Chocolate"
-	
 - "Banana"
-	
 - "Plain"
-	
 
 repeating = false
 
@@ -58,17 +56,13 @@ test: "Topping?" {
 	autoconfirm = true
 }
 |-> "Repeat topping"
-topping <- option cccc{
+topping <- option {
 	noSelectionReset = repeating
 }
 - "Cinnamon" ? _ != flavor ?! "[color=gray]Cinnamon\n[font_size=16]already main flavor[/font_size][/color]"
-	
 - "Chocolate" ? _ != flavor ?! "[color=gray]Chocolate\n[font_size=16]already main flavor[/font_size][/color]"
-	
 - "Banana" ? _ != flavor ?! "[color=gray]Banana\n[font_size=16]already main flavor[/font_size][/color]"
-	
 - "Plain" ? _ != flavor ?! "[color=gray]Plain\n[font_size=16]already main flavor[/font_size][/color]"
-	
 
 ? flavor in topping
 	repeating = true

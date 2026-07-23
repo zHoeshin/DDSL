@@ -301,11 +301,16 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 						)
 						j = skipNewLines(tokens, j)
 						if j >= L:
-							push_error("Expected body for match branch at " + str(t2.y + 1) + ":" + str(t2.x + 1))
-							return []
-						var scope = tokens[j]
-						j += 1
-						branches.append([expr3, parse(scope.value)])
+							#push_error("Expected body for match branch at " + str(t2.y + 1) + ":" + str(t2.x + 1))
+							#return []
+							branches.append([expr3, []])
+						else:
+							var scope = tokens[j]
+							if scope.type != "scopeidentdent":
+								branches.append([expr3, []])
+							else:
+								j += 1
+								branches.append([expr3, parse(scope.value)])
 					elif t2.value == "--":
 						j += 1
 						j = skipNewLines(tokens, j)

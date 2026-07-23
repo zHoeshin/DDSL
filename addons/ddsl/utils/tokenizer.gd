@@ -12,6 +12,7 @@ static var tokenspecs = [
 	[regex(r"\d+\.\d+"), "numdec", -1, func(n: String): return float(n)],
 	[regex(r"\d+"), "numint", -1, func(n: String): return int(n)],
 	[regex(r"""(["'])(?:(?=(\\?))\2.|[^\1\\])*?\1"""), "string", -1, func(s: String): return s.substr(1, len(s) - 2)],#.c_unescape()],
+	[regex(r"""tr(["'])(?:(?=(\\?))\2.|[^\1\\])*?\1"""), "trstring", -1, func(s: String): return s.substr(3, len(s) - 4)],#.c_unescape()],
 	[regex(r"\b(in|await)\b"), "op", -1, null],
 	[regex(r"[\p{L}_][\p{L}\p{N}_]*"), "varid", -1, null],
 	[regex(r"@[\p{L}\p{N}_]+"), "vartemp", -1, func(s: String): return s.substr(0, len(s))],

@@ -104,7 +104,47 @@ class Interpreter:
 		"var_to_bytes": var_to_bytes, "var_to_str": var_to_str, "wrapf": wrapf, "wrapi": wrapi,
 		"printerr": printerr, "push_warning": push_warning, "push_error": push_error, "prints": prints,
 		"printraw": printraw, "print_rich": print_rich,
-		"true": true, "false": false, "null": null, "Time": Time
+		"true": true, "false": false, "null": null,
+		"Time": Time,
+		"TranslationServer": TranslationServer, "tr": Object.tr,
+		"AudioServer": AudioServer,
+		"CameraServer": CameraServer,
+		"ClassDB": ClassDB,
+		"DisplayServer": DisplayServer,
+		"EditorInterface": EditorInterface,
+		"Engine": Engine,
+		"EngineDebugger": EngineDebugger,
+		"GDExtensionManager": GDExtensionManager,
+		"GDScriptLanguageProtocol": GDScriptLanguageProtocol,
+		"Geometry2D": Geometry2D,
+		"Geometry3D": Geometry3D,
+		"IP": IP,
+		"Input": Input,
+		"InputMap": InputMap,
+		"JavaClassWrapper": JavaClassWrapper,
+		"JavaScriptBridge": JavaScriptBridge,
+		"Marshalls": Marshalls,
+		"NativeMenu": NativeMenu,
+		"NavigationMeshGenerator": NavigationMeshGenerator,
+		"NavigationServer2D": NavigationServer2D,
+		"NavigationServer2DManager": NavigationServer2DManager,
+		"NavigationServer3D": NavigationServer3D,
+		"NavigationServer3DManager": NavigationServer3DManager,
+		"OS": OS,
+		"Performance": Performance,
+		"PhysicsServer2D": PhysicsServer2D,
+		"PhysicsServer2DManager": PhysicsServer2DManager,
+		"PhysicsServer3D": PhysicsServer3D,
+		"PhysicsServer3DManager": PhysicsServer3DManager,
+		"ProjectSettings": ProjectSettings,
+		"RenderingServer": RenderingServer,
+		"ResourceLoader": ResourceLoader,
+		"ResourceSaver": ResourceSaver,
+		"ResourceUID": ResourceUID,
+		"TextServerManager": TextServerManager,
+		"ThemeDB": ThemeDB,
+		"WorkerThreadPool": WorkerThreadPool,
+		"XRServer": XRServer,
 	}
 	static var constructors = {
 		"bool": func(...args):
@@ -487,6 +527,9 @@ class Interpreter:
 					var matched = false
 					while i < len(cases):
 						if cases[i] == value:
+							if len(bodies[i]) == 0:
+								matched = true
+								break
 							var r = await start(bodies[i])
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
@@ -520,9 +563,10 @@ class Interpreter:
 						push_error("Dialog style must be a DialogBox got " + str(box) + " at " + str(node.y + 1) + ":" + str(node.x + 1))
 					Dialog.setBox(box)
 	
-	func evaluate(expr: Dialog.ASTNode, isValue: bool, _def: Variant) -> Variant:
+	func evaluate(expr: Dialog.ASTNode, isValue: bool, _def: Variant, canTuple: bool = false) -> Variant:
 		if expr == null:
 			return null
+		#print(expr.dump())
 		match expr.type:
 			"output":
 				var sprite = await evaluate(expr.value["sprite"], true, null)
@@ -559,7 +603,7 @@ class Interpreter:
 						)
 				if op == "()":
 					var callable = await evaluate(expr.value[0], true, _def)
-					var args = await evaluate(expr.value[1], true, _def)
+					var args = await evaluate(expr.value[1], true, _def, true)
 					#if callable is Object and callable.has_method("callv"):
 					if callable is Object and callable.has_method("_call"):
 						return callable._call.callv(args)
@@ -654,7 +698,12 @@ class Interpreter:
 				var a = []
 				for t in expr.value:
 					a.append(await evaluate(t, true, _def))
-				return a
+				if canTuple:
+					return a
+				else:
+					if len(a) == 1:
+						return a[0]
+					return a
 			"dict":
 				var d = {}
 				for pair in expr.value:
@@ -672,6 +721,10 @@ class Interpreter:
 			"string":
 				#return expr.value
 				return await evaluateString(expr.value)
+			"trstring":
+				return await evaluateString(tr(
+					await evaluateString(expr.value)
+				))
 			"varid", "varfile":
 				var name = expr.value
 				var source = null
