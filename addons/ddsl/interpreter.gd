@@ -115,7 +115,7 @@ class Interpreter:
 		"Engine": Engine,
 		"EngineDebugger": EngineDebugger,
 		"GDExtensionManager": GDExtensionManager,
-		"GDScriptLanguageProtocol": GDScriptLanguageProtocol,
+		#"GDScriptLanguageProtocol": GDScriptLanguageProtocol,
 		"Geometry2D": Geometry2D,
 		"Geometry3D": Geometry3D,
 		"IP": IP,
