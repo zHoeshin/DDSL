@@ -24,11 +24,11 @@ Complex = ^"res://example/complex.gd"
 z1 = Complex(1, 4)
 z2 = Complex(5, -1)
 
-test: "z1 = " + str(z1) + "\nz2 = " + str(z2)
+test: "z1 = {z1}\nz2 = {z2}"
 
-test: "z1 + z2 = " + str(z1 + z2)
-test: "z1 * z2 = " + str(z1 * z2)
-test: "z1ᶻ² = " + str(z1 ** z2)
+test: "z1 + z2 = {z1 + z2}"
+test: "z1 * z2 = {z1 * z2}"
+test: "z1ᶻ² = {z1 ** z2}"
 
 test: "Question" {
 	autoconfirm = true
@@ -52,17 +52,26 @@ flavor <- option
 - "Plain"
 	
 
+repeating = false
+
 test: "Topping?" {
 	autoconfirm = true
 }
-topping <- option
-- "Cinnamon" ? _ != flavor
+|-> "Repeat topping"
+topping <- option cccc{
+	noSelectionReset = repeating
+}
+- "Cinnamon" ? _ != flavor ?! "[color=gray]Cinnamon\n[font_size=16]already main flavor[/font_size][/color]"
 	
-- "Chocolate" ? _ != flavor
+- "Chocolate" ? _ != flavor ?! "[color=gray]Chocolate\n[font_size=16]already main flavor[/font_size][/color]"
 	
-- "Banana" ? _ != flavor
+- "Banana" ? _ != flavor ?! "[color=gray]Banana\n[font_size=16]already main flavor[/font_size][/color]"
 	
-- "Plain" ? _ != flavor
+- "Plain" ? _ != flavor ?! "[color=gray]Plain\n[font_size=16]already main flavor[/font_size][/color]"
 	
 
-test: "Selected " + flavor + " with " + topping
+? flavor in topping
+	repeating = true
+	|<- "Repeat topping"
+
+test: "Selected {flavor} with \{{topping}}"

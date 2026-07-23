@@ -111,6 +111,12 @@ static func skipNewLines(tokens: Array[Dialog.ASTNode], i: int) -> int:
 		i += 1
 	return i
 
+static func parseStandaloneExpression(tokens: Array[Dialog.ASTNode]):
+	tokens = processIdentation(tokens)
+	tokens = foldBrackets(tokens)
+	var pexpr = parseExpression(tokens)
+	return pexpr[0]
+
 static func parse(tokens: Array[Dialog.ASTNode]):
 	tokens = processIdentation(tokens)
 	tokens = foldBrackets(tokens)
@@ -147,7 +153,7 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 					if j == s:
 						push_error("Expected expression after conditional at " + str(t2.y + 1) + ":" + str(t2.x + 1))
 						return [] as Array[Dialog.ASTNode]
-					var expr = tokens.slice(s, j)
+					var expr = parseExpression(tokens.slice(s, j))[0]
 					j = skipNewLines(tokens, j)
 					if j >= L:
 						push_error("Expected body after conditional at " + str(t2.y + 1) + ":" + str(t2.x + 1))
@@ -245,6 +251,8 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 		for token in expr:
 			arrow += 1
 			if token.type == "op" and token.value == "<-":
+				var hasOptions = false
+				var options = null
 				isInput = true
 				var assignee = expr.slice(0, arrow)
 				var option = expr.slice(arrow + 1)
@@ -257,15 +265,20 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 				if len(option) == 0:
 					option = null
 				else:
-					option = Dialog.ASTNode.new(
-						"expr", parseExpression(option)[0], option[0].x, option[0].y, option[0].offset
-					)
+					if option[-1].type == "scope{}":
+						options = parseExpression([option[-1]])[0]
+						hasOptions = true
+						option.pop_back()
+					if len(option) == 0:
+						option = null
+					else:
+						option = Dialog.ASTNode.new(
+							"expr", parseExpression(option)[0], option[0].x, option[0].y, option[0].offset
+						)
 				i = skipNewLines(tokens, i)
 				var branches = []
 				var defaultBranch = null
 				var j = i
-				var hasOptions = false
-				var options = null
 				while j < L:
 					var t2 = tokens[j]
 					if not hasOptions and t2.type == "scope{}":
@@ -342,6 +355,8 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 					i += 1
 				else:
 					o.append(pexpr)
+			elif pexpr.type == "label":
+				o.append(pexpr)
 			else:
 				o.append(Dialog.ASTNode.new(
 					"expr", pexpr, t.x, t.y, t.offset
@@ -374,7 +389,7 @@ const OP = {
 		
 		"&": 106, "^": 105, "|": 104,
 		
-		":": 02, "{}": 01,
+		":": 03, "{}": 02,
 		
 		";": 20,
 		
@@ -382,7 +397,9 @@ const OP = {
 		
 		"->": 05,
 		
-		",": 01,
+		",": 02,
+		
+		"as": 02,
 		
 		"?": 10, "?!": 10, "?_": 10
 	},
@@ -394,8 +411,9 @@ const OP = {
 		"-": 260,
 		"()": 260,
 		"[]": 260,
-	
 		"{}": 260,
+		"|<-": 1,
+		"|->": 1,
 	},
 	"left": ["**", "*/"]
 }
@@ -535,20 +553,34 @@ static func parenExpr(right):
 		})
 
 static func unaryExpr(right, op):
+	if op.value == "|->":
+		return Dialog.ASTNode.new(
+			"label",
+			right,
+			op.x, op.y, op.offset
+		)
+	if op.value == "|<-":
+		return Dialog.ASTNode.new(
+			"goto",
+			right,
+			op.x, op.y, op.offset
+		)
 	if op.value == "()":
 		return parenExpr(right)
 	if op.value == "[]":
 		if right.type == "infixop" \
 		and right.subtype == ",":
-			return Dialog.ASTNode.fromDict({
-				"type": "array",
-				"value": right.value
-			})
+			return Dialog.ASTNode.new(
+				"array",
+				right.value,
+				op.x, op.y, op.offset
+			)
 		else:
-			return Dialog.ASTNode.fromDict({
-				"type": "array",
-				"value": [right]
-			})
+			return Dialog.ASTNode.new(
+				"array",
+				[right],
+				op.x, op.y, op.offset
+			)
 	if op.value == "{}":
 		#if right.type == "infixop" and right.subtype == ",":
 			#return Dialog.ASTNode.new(

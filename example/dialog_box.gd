@@ -10,6 +10,7 @@ var DEFAULT_TIMER_THRESHOLD = 0.05
 var outputTimer: float = 0
 var threshold = 0.05
 
+static var spriteSize = 0.0
 
 var isInputting: bool = false
 var isOptions: bool = false
@@ -55,6 +56,8 @@ func _ready():
 	outputSprite.set_deferred("size", Vector2(
 		outputSprite.size.y, outputSprite.size.y
 	))
+	spriteSize = outputSprite.size.y
+	$container/sprite.custom_minimum_size.x = spriteSize
 
 func input(type, branches: Array, _options: Dictionary = {}):
 	if type is Dialog.OptionsInput:
@@ -64,7 +67,8 @@ func input(type, branches: Array, _options: Dictionary = {}):
 			return
 		isInputting = true
 		isOptions = true
-		selectedOption = 0
+		if not _options.get("noSelectionReset", false):
+			selectedOption = 0
 		optionContainers[optionsCount].show()
 		for i in optionsCount:
 			options[optionsCount][i].text = str(branches[i])

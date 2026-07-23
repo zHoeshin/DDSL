@@ -2,7 +2,7 @@ extends CanvasLayer
 
 static var _tokenize = null
 static var _parser = null
-
+static var _exprparser = null
 static var _Interpreter = null
 
 ## Emitted before starting dialog
@@ -11,6 +11,13 @@ signal dialogStarted
 ## Emitted after ending dialog
 signal dialogEnded
 
+
+class Message:
+	var type: String
+	var data
+	func _init(t: String, d):
+		type = t
+		data = d
 
 static var _globals: Dictionary = {
 	"options": OptionsInput.new(),
@@ -39,7 +46,7 @@ func start(dialog: String, callback: Callable = Callable()) -> Dictionary:
 	var parsed = _parse(text)
 	#print("!!! ", parsed)
 	dialogStarted.emit()
-	var interpreter = _Interpreter.new()
+	var interpreter = _Interpreter.new({})
 	await interpreter.start(parsed)
 	if callback.is_valid():
 		callback.call(interpreter.variables)
@@ -54,8 +61,12 @@ func start(dialog: String, callback: Callable = Callable()) -> Dictionary:
 func startFromSource(source: String, callback: Callable = Callable()) -> Dictionary:
 	var parsed = _parse(source)
 	dialogStarted.emit()
-	var interpreter = _Interpreter.new()
-	await interpreter.start(parsed)
+	var interpreter = _Interpreter.new({})
+	var r = await interpreter.start(parsed)
+	if r != null:
+		if r is Message:
+			if r.type == "goto":
+				push_error("Trying to jump to a non-existant label " + str(r.data))
 	dialogEnded.emit()
 	return interpreter.variables
 
@@ -71,6 +82,7 @@ func setBox(box: DialogBox):
 func _enter_tree():
 	_tokenize = preload("res://addons/ddsl/utils/tokenizer.gd").tokenize
 	_parser = preload("res://addons/ddsl/utils/parser.gd").parse
+	_exprparser = preload("res://addons/ddsl/utils/parser.gd").parseStandaloneExpression
 	_Interpreter = preload("res://addons/ddsl/interpreter.gd").Interpreter
 	
 	#anchor_left = 0

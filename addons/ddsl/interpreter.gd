@@ -78,6 +78,13 @@ class Reference3 extends Reference:
 		return Reference3.new(parent[key1], key2, key3, key)
 
 
+class Alias:
+	var name
+	var value
+	func _init(n, v):
+		name = n
+		value = v
+
 class Interpreter:
 	static var builtins: Dictionary[String, Variant] = {
 		"abs": abs, "absf": absf, "absi": absi, "acos": acos, "acosh": acosh,
@@ -356,18 +363,62 @@ class Interpreter:
 				_: return null
 			,
 	}
-	var variables: Dictionary = {}
 	
-	func start(ast: Array[Dialog.ASTNode]) -> void:
-		for node in ast:
+	var variables: Dictionary = {}
+	var labels: Dictionary = {}
+	var labelsstack: Array[Dictionary] = []
+	var ci: int = 0
+	var cistack: Array[int] = []
+	
+	func _init(vars: Dictionary):
+		variables = vars
+		labels = {}
+		ci = 0
+	
+	func handleMessage(r: Dialog.Message):
+		if r.type == "goto":
+			if r.data in labels:
+				ci = labels[r.data]
+			else:
+				return r
+	
+	func start(ast: Array[Dialog.ASTNode]):
+		cistack.push_back(ci)
+		labelsstack.push_back(labels)
+		ci = 0
+		labels = {}
+		while ci < len(ast):
+			var node = ast[ci]
+			ci += 1
+			if node.type == "label":
+				labels[await evaluate(node.value, true, null)] = ci
+		ci = 0
+		while ci < len(ast):
+			var node = ast[ci]
+			ci += 1
 			match node.type:
 				"if":
 					for cond_body in node.value:
 						if cond_body[0] == null:
-							await start(cond_body[1])
+							var r = await start(cond_body[1])
+							ci = cistack.pop_back()
+							labels = labelsstack.pop_back()
+							if r != null:
+								var r2 = handleMessage(r)
+								if r2 != null:
+									return r2
 							break
-						elif await evaluate(cond_body[0], true, null):
-							await start(cond_body[1])
+						var v = await evaluate(cond_body[0], true, null)
+						if v is Object and v.has_method("_to_bool"):
+							v = v._to_bool()
+						if v:
+							var r = await start(cond_body[1])
+							ci = cistack.pop_back()
+							labels = labelsstack.pop_back()
+							if r != null:
+								var r2 = handleMessage(r)
+								if r2 != null:
+									return r2
 							break
 				"match":
 					var matchee = await evaluate(node.value["match"], true, null)
@@ -378,14 +429,35 @@ class Interpreter:
 							#break
 							continue
 						elif await evaluate(case_body[0], true, null) == matchee:
-							await start(case_body[1])
+							var r = await start(case_body[1])
+							ci = cistack.pop_back()
+							labels = labelsstack.pop_back()
+							if r != null:
+								var r2 = handleMessage(r)
+								if r2 != null:
+									return r2
 							matched = true
 							break
 					if not matched:
-						await start(node.value["default"])
+						var r = await start(node.value["default"])
+						ci = cistack.pop_back()
+						labels = labelsstack.pop_back()
+						if r != null:
+							var r2 = handleMessage(r)
+							if r2 != null:
+								return r2
 				"expr":
 					if node.value.type == "infixop" and node.value.subtype == ":":
 						await evaluate(node.value, true, null)
+					elif node.value.type == "goto":
+						var l = await evaluate(node.value.value, true, null)
+						if l == null:
+							pass
+						if l in labels:
+							print(labels[l])
+							ci = labels[l]
+						else:
+							return Dialog.Message.new("goto", l)
 					else:
 						evaluate(node.value, true, null)
 				"input":
@@ -415,12 +487,24 @@ class Interpreter:
 					var matched = false
 					while i < len(cases):
 						if cases[i] == value:
-							await start(bodies[i])
+							var r = await start(bodies[i])
+							ci = cistack.pop_back()
+							labels = labelsstack.pop_back()
+							if r != null:
+								var r2 = handleMessage(r)
+								if r2 != null:
+									return r2
 							matched = true
 							break
 						i += 1
 					if not matched:
-						await start(node.value["default"])
+						var r = await start(node.value["default"])
+						ci = cistack.pop_back()
+						labels = labelsstack.pop_back()
+						if r != null:
+							var r2 = handleMessage(r)
+							if r2 != null:
+								return r2
 				"output":
 					var sprite = await evaluate(node.value["sprite"], true, null)
 					var text = await evaluate(node.value["text"], true, null)
@@ -439,7 +523,6 @@ class Interpreter:
 	func evaluate(expr: Dialog.ASTNode, isValue: bool, _def: Variant) -> Variant:
 		if expr == null:
 			return null
-		#print(expr.dump())
 		match expr.type:
 			"output":
 				var sprite = await evaluate(expr.value["sprite"], true, null)
@@ -452,6 +535,11 @@ class Interpreter:
 				return text
 			"infixop":
 				var op = expr.subtype
+				if op == "as":
+					return Alias.new(
+						await evaluate(expr.value[1], isValue, _def),
+						await evaluate(expr.value[0], isValue, _def),
+					)
 				if op == ":":
 					var sprite = await evaluate(expr.value[0], isValue, _def)
 					var text = await evaluate(expr.value[1], isValue, _def)
@@ -582,10 +670,10 @@ class Interpreter:
 			"numint":
 				return expr.value
 			"string":
-				return expr.value
+				#return expr.value
+				return await evaluateString(expr.value)
 			"varid", "varfile":
 				var name = expr.value
-				#prints("var", name, isValue)
 				var source = null
 				var overridable = true
 				if name in variables:
@@ -605,7 +693,7 @@ class Interpreter:
 							return _def
 						else:
 							source = variables
-					return source[name]
+					return source.get(name, null)
 				else:
 					if source == null: source = variables
 					return Reference1.new(source, name)
@@ -623,6 +711,51 @@ class Interpreter:
 				return resource
 			
 		return null
+		
+	func evaluateString(s: String):
+		const escaped = {
+			"a": "\a",
+			"b": "\b",
+			"f": "\f",
+			"n": "\n",
+			"r": "\r",
+			"t": "\t",
+			"v": "\v",
+		}
+		var output = ""
+		var i = 0
+		var L = len(s)
+		while i < L:
+			var c = s[i]
+			if c == "\\":
+				if i + 1 < L:
+					i += 1
+					output += escaped.get(s[i], s[i])
+				else:
+					output += c
+			elif c == "{":
+				var start = i
+				var j = i + 1
+				var brcount = 1
+				while brcount > 0 and j < L:
+					var char = s[j]
+					if char == "{":
+						brcount += 1
+					elif char == "}":
+						brcount -= 1
+					j += 1
+				var end = j
+				var exprs = s.substr(start + 1, end - start - 2)
+				var e = Dialog._exprparser.call(
+					Dialog._tokenize.call(exprs)
+				)
+				var v = await evaluate(e, true, null)
+				output += str(v)
+				i = j - 1
+			else:
+				output += c
+			i += 1
+		return output
 	
 	func unwrapValue(a):
 		if a is Reference:

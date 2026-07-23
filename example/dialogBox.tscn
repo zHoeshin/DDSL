@@ -12,13 +12,14 @@ layout_mode = 3
 anchor_left = 0.1
 anchor_top = 0.05
 anchor_right = 0.9
-anchor_bottom = 0.35
+anchor_bottom = 0.36
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rqjjb")
 metadata/_custom_type_script = "uid://s1qltmg40guq"
 
 [node name="output" type="Control" parent="." unique_id=1262446649]
+visible = false
 layout_mode = 1
 anchor_left = 0.1
 anchor_top = 0.05
@@ -71,25 +72,20 @@ layout_mode = 2
 size_flags_horizontal = 0
 texture = SubResource("NoiseTexture2D_4iw61")
 expand_mode = 2
-stretch_mode = 5
 
 [node name="text" type="VBoxContainer" parent="container" unique_id=1347658921]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="text" type="RichTextLabel" parent="container/text" unique_id=1653310806]
+[node name="text" type="RichTextLabel" parent="container/text" unique_id=1531408933]
 layout_mode = 2
-focus_mode = 2
 theme_override_font_sizes/normal_font_size = 32
 theme_override_font_sizes/bold_font_size = 32
 theme_override_font_sizes/bold_italics_font_size = 32
 theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
-bbcode_enabled = true
+text = "ABCDEF"
 fit_content = true
-scroll_following = true
-autowrap_trim_flags = 0
-selection_enabled = true
 
 [node name="output1" type="HBoxContainer" parent="container/text" unique_id=1071781672]
 visible = false
@@ -98,6 +94,7 @@ size_flags_vertical = 3
 
 [node name="label1" type="RichTextLabel" parent="container/text/output1" unique_id=1544347870]
 modulate = Color(1, 1, 0, 1)
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/normal_font_size = 32
@@ -107,7 +104,7 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -118,6 +115,7 @@ size_flags_vertical = 3
 
 [node name="label1" type="RichTextLabel" parent="container/text/output2" unique_id=2056321680]
 modulate = Color(1, 1, 0, 1)
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/normal_font_size = 32
@@ -127,11 +125,12 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="label2" type="RichTextLabel" parent="container/text/output2" unique_id=1501223271]
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/normal_font_size = 32
@@ -141,7 +140,7 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "DEF"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -152,6 +151,7 @@ size_flags_vertical = 3
 
 [node name="label1" type="RichTextLabel" parent="container/text/output3" unique_id=600241680]
 modulate = Color(1, 1, 0, 1)
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/normal_font_size = 32
@@ -161,11 +161,12 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="label2" type="RichTextLabel" parent="container/text/output3" unique_id=754173774]
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/normal_font_size = 32
@@ -175,11 +176,12 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="label3" type="RichTextLabel" parent="container/text/output3" unique_id=1542580871]
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/normal_font_size = 32
@@ -189,7 +191,7 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -204,6 +206,7 @@ size_flags_horizontal = 3
 
 [node name="label1" type="RichTextLabel" parent="container/text/output4/row1" unique_id=2134581212]
 modulate = Color(1, 1, 0, 1)
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -213,12 +216,14 @@ theme_override_font_sizes/bold_italics_font_size = 32
 theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
-text = "ABC"
-fit_content = true
+text = "ABC
+abc"
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="label2" type="RichTextLabel" parent="container/text/output4/row1" unique_id=136896196]
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -229,7 +234,7 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -238,6 +243,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="label3" type="RichTextLabel" parent="container/text/output4/row2" unique_id=1738602861]
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -248,11 +254,12 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="label4" type="RichTextLabel" parent="container/text/output4/row2" unique_id=1925081139]
+clip_contents = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -263,7 +270,7 @@ theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
 bbcode_enabled = true
 text = "ABC"
-fit_content = true
+scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
