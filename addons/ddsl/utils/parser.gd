@@ -374,9 +374,9 @@ const OP = {
 	"infixprec": {
 		"in": 200,
 		
-		"()": 260,
+		"()": 360,
 
-		"[]": 260, ".": 260,
+		"[]": 360, ".": 360,
 
 		"**": 150, "*/": 150,
 
@@ -419,6 +419,7 @@ const OP = {
 		"{}": 260,
 		"|<-": 1,
 		"|->": 1,
+		"tr": 100,
 	},
 	"left": ["**", "*/"]
 }
@@ -634,6 +635,14 @@ static func binaryExpr(left, right, op):
 		return Dialog.ASTNode.fromDict({
 			"type": "assign",
 			"value": [left, right]
+		})
+	if op.value == "[]":
+		#prints(left.dump(), right.dump())
+		return Dialog.ASTNode.fromDict({
+			"type": "infixop",
+			"subtype": "[]",
+			"value": [left, right.value],
+			
 		})
 	if op.value == "{}":
 		if left.type == "output":

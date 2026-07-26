@@ -34,19 +34,41 @@ func removeGlobal(name: String):
 func getGlobal(name: String, default: Variant = null):
 	return _globals.get(name, default)
 
+
+class Options:
+	var variables: Dictionary = {}
+	var constants: Dictionary = {}
+	var canAccessAutoloads: bool = true
+	
+	func _init(
+		variables: Dictionary = {},
+		constants: Dictionary = {},
+		canAccessAutoloads: bool = true,
+	):
+		self.variables = variables
+		self.constants = constants
+		self.canAccessAutoloads = canAccessAutoloads
+
 ## Start a dialog from file[br][br]
 ## [code]dialog[/code]: path to the dialog resource in DDSL syntax[br]
 ## [code]callback[/code]: callable executed when dialog finishes[br][br]
 ## [code]return[/code]: returns Dictionary[String, Variant] of internal interpreter variables[br]
-func start(dialog: String, callback: Callable = Callable()) -> Dictionary:
+func start(dialog: String, options: Options = null, callback: Callable = Callable()) -> Dictionary:
 	var text = FileAccess.get_file_as_string(dialog)
 	var err = FileAccess.get_open_error()
 	if err != OK:
+		push_error("Error while loading file " + str(err))
 		return {}
 	var parsed = _parse(text)
 	#print("!!! ", parsed)
 	dialogStarted.emit()
 	var interpreter = _Interpreter.new({})
+	if options != null:
+		if options.variables != null:
+			interpreter.variables = options.variables
+		if options.constants != null:
+			interpreter.constants = options.constants
+		interpreter.canAccessAutoloads = options.canAccessAutoloads
 	await interpreter.start(parsed)
 	if callback.is_valid():
 		callback.call(interpreter.variables)
@@ -58,7 +80,7 @@ func start(dialog: String, callback: Callable = Callable()) -> Dictionary:
 ## [code]dialog[/code]: raw dialog script in DDSL syntax[br]
 ## [code]callback[/code]: callable executed when dialog finishes[br][br]
 ## [code]return[/code]: returns Dictionary[String, Variant] of internal interpreter variables[br]
-func startFromSource(source: String, callback: Callable = Callable()) -> Dictionary:
+func startFromSource(source: String, options: Options = null, callback: Callable = Callable()) -> Dictionary:
 	var parsed = _parse(source)
 	dialogStarted.emit()
 	var interpreter = _Interpreter.new({})

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ugs3an2mq8ft"]
 
-[ext_resource type="Script" uid="uid://i8qxu74nx5cq" path="res://example/dialog_box.gd" id="1_rqjjb"]
+[ext_resource type="Script" uid="uid://i8qxu74nx5cq" path="res://examples/example1/dialog_box.gd" id="1_rqjjb"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_rqjjb"]
 

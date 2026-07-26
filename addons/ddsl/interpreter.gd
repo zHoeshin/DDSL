@@ -405,6 +405,8 @@ class Interpreter:
 	}
 	
 	var variables: Dictionary = {}
+	var constants: Dictionary = {}
+	var canAccessAutoloads: bool = true
 	var labels: Dictionary = {}
 	var labelsstack: Array[Dictionary] = []
 	var ci: int = 0
@@ -553,6 +555,9 @@ class Interpreter:
 					var text = await evaluate(node.value["text"], true, null)
 					var options = await evaluate(node.value["options"], true, null)
 					if options == null: options = {}
+					if Dialog.currentBox == null:
+						push_error("No dialog box is currently selected")
+						return
 					Dialog.currentBox.show()
 					Dialog.currentBox.output(sprite, str(text), options)
 					await Dialog.currentBox.outputComplete
@@ -591,7 +596,7 @@ class Interpreter:
 					Dialog.currentBox.output(sprite, str(text), {})
 					await Dialog.currentBox.outputComplete
 					return text
-				if op == "." or op == "[]":
+				if op == ".":
 					if isValue:
 						return (await evaluate(expr.value[0], isValue, _def))[
 							await evaluate(expr.value[1], isValue, _def)
@@ -601,6 +606,15 @@ class Interpreter:
 							await evaluate(expr.value[0], isValue, _def),
 							await evaluate(expr.value[1], isValue, _def)
 						)
+				if op == "[]":
+					var current = await evaluate(expr.value[0], isValue, _def)
+					if isValue:
+						for key in expr.value[1]:
+							current = current[await evaluate(key, isValue, _def)]
+					else:
+						for key in expr.value[1]:
+							current = getMember(current, await evaluate(key, isValue, _def))
+					return current
 				if op == "()":
 					var callable = await evaluate(expr.value[0], true, _def)
 					var args = await evaluate(expr.value[1], true, _def, true)
@@ -674,6 +688,11 @@ class Interpreter:
 				if op == "await":
 					return await evaluate(expr.value, true, _def)
 				var v = await evaluate(expr.value, true, _def)
+				if op == "tr":
+					if v is Object and v.has_method("_tr"):
+						return v._tr()
+					else:
+						return tr(str(v))
 				if v is Object and v.has_method(OP["prefix"][op]):
 					return v.call(OP["prefix"][op])
 				match op:
@@ -728,19 +747,19 @@ class Interpreter:
 			"varid", "varfile":
 				var name = expr.value
 				var source = null
-				var overridable = true
 				if name in variables:
 					source = variables
+				elif name in constants:
+					return constants[name]
+				elif canAccessAutoloads and Engine.get_main_loop().root.has_node(str(name)):
+					return Engine.get_main_loop().root.get_node(str(name))
 				elif name in Dialog._globals:
-					source = Dialog._globals
-					overridable = false
+					return Dialog._globals[name]
 				elif name in builtins:
-					source = builtins
-					overridable = false
+					return builtins[name]
 				elif name in constructors:
-					source = constructors
-					overridable = false
-				if isValue or not overridable:
+					return constructors[name]
+				if isValue:
 					if source == null:
 						if _def != null and name == "_":
 							return _def

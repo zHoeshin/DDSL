@@ -20,7 +20,7 @@ static var tokenspecs = [
 	[regex(r"%[\p{L}\p{N}_]+"), "varglobal", -1, func(s: String): return s.substr(0, len(s))],
 	[regex(r"\^[\p{L}\p{N}\/\\:._\-+=]+"), "varpath", -1, func(s: String): return s.substr(1, len(s))],
 	[regex(r"""\^(["'])(?:(?=(\\?))\2.|[^\1\\])*?\1"""), "varpathstr", -1, func(s: String): return s.substr(2, len(s) - 3)],
-	[regex(r"((\bas\b)|(\bawait\b)|\|->|\|<-|--|->|\+|\/|-|<=|<-|:|,|\.|>=|&|\||\^|==|!=|>|<|=|\*\*|\?\!|\?|\/\/|\*\/|\*|\/|;|%)"), "op", -1, null],
+	[regex(r"((\btr\b)(\bas\b)|(\bawait\b)|\|->|\|<-|--|->|\+|\/|-|<=|<-|:|,|\.|>=|&|\||\^|==|!=|>|<|=|\*\*|\?\!|\?|\/\/|\*\/|\*|\/|;|%)"), "op", -1, null],
 	[regex(r"[\(\)\[\]\{\}]"), "bracket", -1, null],
 	[regex("r\n"), "newline", -1, null],
 	[regex(r"[\s\r \t\0]*"), "ws", 0, null],
