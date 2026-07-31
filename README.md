@@ -1,6 +1,6 @@
 <img src="icon.svg" alt="icon" width="120">
 
-DDSL is a dialog manager plugin for [Godot 4.6+](https://godotengine.org/), primarily focusing on snippet-like conversations and integration with the GDScript system
+DDSL is a dialog manager plugin for [Godot 4.6+](https://godotengine.org/), using scripts with integration with the GDScript system
 
 ## Installation
 - Copy the folder `addons/ddsl` from this repository into your Godot project's `addons/` folder
@@ -9,7 +9,7 @@ DDSL is a dialog manager plugin for [Godot 4.6+](https://godotengine.org/), prim
 - The `Dialog` singleton should be now accessible in the code and `dialog_*` input map actions should be added
 - If this is not the case, reload the project
 - Add appropriate controls to the `dialog_*` actions in `Project > Project settings` under the `Input map` tab
-Full installation guide can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/...)
+Full installation guide can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/01-Home)
 
 ## Basic usage
 Dialog scripts can be created anywhere within the game's project folder. For this, create a text file, and end it with `.ddsl`, then fill it with the dialog, for example
@@ -57,7 +57,7 @@ Dialog.start("res://path/to/dialog.ddsl", _dialog_callback)
 var vars = await Dialog.start("res://path/to/dialog.ddsl")
 ```
 
-Full usage instructions can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/...)
+Full usage instructions can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/02-Using-DDSL)
 
 ## Features
 - Integration with GDScript, including native calls to built-in methods
