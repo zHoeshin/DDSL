@@ -470,7 +470,8 @@ class Interpreter:
 							#await start(case_body[1])
 							#break
 							continue
-						elif await evaluate(case_body[0], true, null) == matchee:
+						#elif await evaluate(case_body[0], true, null) == matchee:
+						elif self.match(matchee, await evaluate(case_body[0], true, null)):
 							var r = await start(case_body[1])
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
@@ -528,7 +529,8 @@ class Interpreter:
 					var i = 0
 					var matched = false
 					while i < len(cases):
-						if cases[i] == value:
+						#if cases[i] == value:
+						if self.match(value, cases[i]):
 							if len(bodies[i]) == 0:
 								matched = true
 								break
@@ -631,12 +633,16 @@ class Interpreter:
 					return await evaluate(expr.value[1], true, _def)
 				if op == "?":
 					var cond = await evaluate(expr.value[1], true, _def)
+					if cond is Object and cond.has_method("_to_bool"):
+						cond = cond._to_bool.call()
 					if cond:
 						return await evaluate(expr.value[0], true, _def)
 					return null
 				if op == "?_":
 					var value = await evaluate(expr.value[0], true, _def)
 					var cond = await evaluate(expr.value[1], true, value)
+					if cond is Object and cond.has_method("_to_bool"):
+						cond = cond._to_bool.call()
 					if cond:
 						return value
 					return null
@@ -669,12 +675,16 @@ class Interpreter:
 					"!=": return a != b
 					"&&":
 						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
+						if not bool_a: return false
 						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
-						return bool_a && bool_b
+						return bool_b
+						#return bool_a && bool_b
 					"||":
 						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
+						if bool_a: return true
 						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
-						return bool_a || bool_b
+						return bool_b
+						#return bool_a || bool_b
 					"^^":
 						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
 						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
@@ -828,6 +838,17 @@ class Interpreter:
 				output += c
 			i += 1
 		return output
+	
+	func match(matchee: Variant, value: Variant) -> bool:
+		if matchee is Object and matchee.has_method("_match"):
+			return matchee._match.call(value)
+		if value is Object and value.has_method("_match_r"):
+			return value._match_r.call(matchee)
+		if matchee is Object and matchee.has_method("_eq"):
+			return matchee._eq.call(value)
+		if value is Object and value.has_method("_eq_r"):
+			return value._eq_r.call(matchee)
+		return typeof(matchee) == typeof(value) and matchee == value
 	
 	func unwrapValue(a):
 		if a is Reference:
