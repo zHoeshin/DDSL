@@ -646,6 +646,22 @@ class Interpreter:
 					if cond:
 						return value
 					return null
+				
+				if op == "&&":
+					var a = await evaluate(expr.value[0], true, _def)
+					var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
+					if not bool_a: return false
+					var b = await evaluate(expr.value[1], true, _def)
+					var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
+					return bool_b
+				if op == "||":
+					var a = await evaluate(expr.value[0], true, _def)
+					var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
+					if bool_a: return true
+					var b = await evaluate(expr.value[1], true, _def)
+					var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
+					return bool_b
+					
 				var a = await evaluate(expr.value[0], true, _def)
 				var b = await evaluate(expr.value[1], true, _def)
 				var opid = OP["infix"].get(op)
@@ -673,18 +689,6 @@ class Interpreter:
 					"<=": return a <= b
 					"==": return a == b
 					"!=": return a != b
-					"&&":
-						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
-						if not bool_a: return false
-						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
-						return bool_b
-						#return bool_a && bool_b
-					"||":
-						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
-						if bool_a: return true
-						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
-						return bool_b
-						#return bool_a || bool_b
 					"^^":
 						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
 						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
