@@ -83,7 +83,7 @@ func _verify_plugin(result: int, code: int, headers: PackedStringArray, body: Pa
 	if currentTime - latestTime < 3 * 24 * 60 * 60:
 		if versionLatest == versionCurrent:
 			push_warning("Using a new version of DialogueDSL " + vcurrstr)
-			print_rich("[color=" + EditorInterface.get_editor_theme().get_color("warning_color", "Editor").to_html(false) + "]Report any regressions or issues with new features at [url=https://github.com/zHoeshin/DDSL/issues/templates/edit]the plugin's Github[/url][/color]")
+			print_rich("[color=" + EditorInterface.get_editor_theme().get_color("warning_color", "Editor").to_html(false) + "]Report any regressions or issues with new features at [url=https://github.com/zHoeshin/DDSL/issues/]the plugin's Github[/url][/color]")
 
 #func _handles(object):
 	#return is_instance_of(object, DialogFile)
