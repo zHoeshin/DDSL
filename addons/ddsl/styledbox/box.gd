@@ -294,6 +294,7 @@ func output(sprite, text: String, options: Dictionary = {}):
 	o_autoconfirm = options.get("next", false) || options.get("autoconfirm", false)
 	if options.has("speed"):
 		o_wait = 1.0 / options.get("speed")
+	show()
 
 func endOutput():
 	skipTimer.stop()
@@ -352,12 +353,12 @@ func _process(delta):
 				currentOption = 0
 				for node in currentOptionNodes:
 					node.queue_free()
+				inputOptionsWrapper.hide()
+				hide()
 				if branch is Dialog.Alias:
 					inputComplete.emit(branch.value)
 				else:
 					inputComplete.emit(branch)
-				inputOptionsWrapper.hide()
-				hide()
 				return
 			var h = int(Input.is_action_just_pressed("dialog_right")) - int(Input.is_action_just_pressed("dialog_left"))
 			var d = int(Input.is_action_just_pressed("dialog_up")) - int(Input.is_action_just_pressed("dialog_down"))
@@ -412,10 +413,11 @@ func _process(delta):
 				currentState = _State.Idle
 				inputNumberSign.text = ""
 				inputNumberSignMirror.text = ""
-				inputComplete.emit(currentNumber)
+				var n = currentNumber
 				currentNumber = 0
 				inputNumberWrapper.hide()
 				hide()
+				inputComplete.emit(n)
 			var h = -int(Input.is_action_just_pressed("dialog_right")) + int(Input.is_action_just_pressed("dialog_left"))
 			if h != 0:
 				currentPower = clamp(currentPower + h, 0, currentNumberLength - 1)
