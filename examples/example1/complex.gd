@@ -204,7 +204,6 @@ class Complex:
 			)
 
 	func _root(n):
-		# Root is just power of 1/n
 		if n is Complex:
 			return _pow(Complex.new(1,0)._div(n))
 		else:

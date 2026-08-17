@@ -1,0 +1,7 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://d1hpb7je1hv0p"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ysi0l"]
+
+[resource]
+texture = SubResource("AtlasTexture_ysi0l")
+modulate_color = Color(1, 1, 1, 0)

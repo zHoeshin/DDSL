@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://i8qxu74nx5cq" path="res://examples/example1/dialog_box.gd" id="1_rqjjb"]
 
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_rqjjb"]
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_kb08c"]
 
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_4iw61"]
-noise = SubResource("FastNoiseLite_rqjjb")
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_7h6mn"]
+noise = SubResource("FastNoiseLite_kb08c")
 
 [node name="DialogBox" type="Control" unique_id=2114725647]
 layout_mode = 3
@@ -70,7 +70,7 @@ grow_vertical = 2
 [node name="sprite" type="TextureRect" parent="container" unique_id=1223182690]
 layout_mode = 2
 size_flags_horizontal = 0
-texture = SubResource("NoiseTexture2D_4iw61")
+texture = SubResource("NoiseTexture2D_7h6mn")
 expand_mode = 2
 
 [node name="text" type="VBoxContainer" parent="container" unique_id=1347658921]
@@ -84,6 +84,7 @@ theme_override_font_sizes/bold_font_size = 32
 theme_override_font_sizes/bold_italics_font_size = 32
 theme_override_font_sizes/italics_font_size = 32
 theme_override_font_sizes/mono_font_size = 32
+bbcode_enabled = true
 text = "ABCDEF"
 fit_content = true
 

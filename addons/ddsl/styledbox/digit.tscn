@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://cybuvobwg61jy"]
+
+[ext_resource type="Script" uid="uid://vvb4p1tj5h6q" path="res://addons/ddsl/styledbox/digit.gd" id="1_0f1t3"]
+[ext_resource type="Texture2D" uid="uid://b5eokcn4y8yh7" path="res://addons/ddsl/styledbox/defaultUp.png" id="1_x5mcg"]
+[ext_resource type="Texture2D" uid="uid://dqjaomux015li" path="res://addons/ddsl/styledbox/defaultDown.png" id="2_0f1t3"]
+
+[node name="Digit" type="VBoxContainer" unique_id=591020368]
+theme_override_constants/separation = 0
+alignment = 1
+script = ExtResource("1_0f1t3")
+
+[node name="up" type="TextureRect" parent="." unique_id=105604764]
+layout_mode = 2
+texture = ExtResource("1_x5mcg")
+stretch_mode = 3
+
+[node name="digit" type="RichTextLabel" parent="." unique_id=1199749745]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 32
+theme_override_font_sizes/bold_font_size = 32
+theme_override_font_sizes/bold_italics_font_size = 32
+theme_override_font_sizes/italics_font_size = 32
+theme_override_font_sizes/mono_font_size = 32
+text = "0"
+fit_content = true
+autowrap_mode = 0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="down" type="TextureRect" parent="." unique_id=1733073191]
+layout_mode = 2
+texture = ExtResource("2_0f1t3")
+stretch_mode = 3

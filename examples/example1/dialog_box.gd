@@ -97,7 +97,7 @@ func output(sprite, text: String, _options: Dictionary = {}):
 	if _options.get("full", false):
 		isFinishedOutputting = true
 		outputText.text = outputString
-	autoconfirm = _options.get("autoconfirm", false)
+	autoconfirm = _options.get("autoconfirm", false) || _options.get("next", false)
 	show()
 
 func _process(delta):

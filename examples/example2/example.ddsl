@@ -1,0 +1,52 @@
+test = ^"res://icon.svg"
+
+null: "This is a test message"
+
+test: "This is a test message with a portrait"
+
+test: "Trying to take digit input" {next = true}
+
+code1 <- digits(4)
+
+if code1 in [0000, 1234, 1235, 9876, 8520, 7913]
+	null: "Poor password"
+else
+	null: "Entered {code1}"
+
+# access a node with unique name
+%rectangle.position.x += 100
+test: "Moved that square"
+
+print($ColorRect)
+
+# access a node by path relative to root
+$ColorRect.position -= Vector2(100, 20)
+test: "Moved the background too"
+
+match 1:
+case 0
+	test: "Null"
+case 1
+	test: "Expected"
+case 2
+	test: "No"
+else
+	test: "???"
+
+test: "Taking number from -101 to 999" {next = true}
+n <- number(-101, 999)
+test: "Selected {n}"
+
+i = 0
+hasBrokenEarly = false
+while i < 5
+	test: "Iteration #{i + 1}. Break?" {next = true}
+	i += 1
+	hasBrokenEarly <- option
+	- true as "Yes"
+		null: "Exiting loop"
+		break
+	- false as "No"
+
+if hasBrokenEarly
+	test: "So impatient..."

@@ -139,14 +139,18 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 			))
 			i += 1
 			continue
-		if t.type == "op" and t.value == "?":
+		if t.type == "op" and (t.value == "?!" or t.value == "--" or t.value == "else" or t.value == "elif"):
+			push_error("Alternative/default branch " + t.value + " must be preceeded by a valid structure at " + str(t.y + 1) + ":" + str(t.x + 1))
+		if t.type == "op" and (t.value == "?" or t.value == "if"):
+			var first = true
 			var branches: Array = []
 			var j = i
 			while j < L:
 				var t2 = tokens[j]
 				if t2.type != "op":
 					break
-				if t2.value == "?":
+				if t2.value == "?" or t2.value == "elif" or (t2.value == "if" and first):
+					first = false
 					j += 1
 					var s = j
 					j = skipToNewline(tokens, j)
@@ -161,7 +165,7 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 					var scope = tokens[j]
 					j += 1
 					branches.append([expr, parse(scope.value)])
-				elif t2.value == "?!":
+				elif t2.value == "?!" or t2.value == "else":
 					j += 1
 					j = skipNewLines(tokens, j)
 					if j >= L:
@@ -173,8 +177,11 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 						push_error("Expected body after conditional at " + str(t2.y + 1) + ":" + str(t2.x + 1))
 						return []
 					branches.append([null, parse(scope.value)])
+					break
 				elif t2.value == ".":
 					j += 1
+					break
+				elif t2.value == "if" and not first:
 					break
 				else:
 					break
@@ -183,7 +190,40 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 				"if", branches, t.x, t.y, t.offset
 			))
 			continue
-		
+		if t.type == "op" and t.value == "while":
+			i += 1
+			var s = i
+			i = skipToNewline(tokens, i)
+			if s == i:
+				push_error("Expected condition for while loop at " + str(t.y + 1) + ":" + str(t.x + 1))
+				return []
+			var expr = parseExpression(tokens.slice(s, i))[0]
+			i = skipNewLines(tokens, i)
+			if i >= L:
+				push_error("Expected body after while loop at " + str(t.y + 1) + ":" + str(t.x + 1))
+				return []
+			var scope = tokens[i]
+			i += 1
+			o.append(Dialog.ASTNode.new(
+				"while", {
+					"cond": expr, "body": parse(scope.value)
+				}, t.x, t.y, t.offset
+			))
+		if t.type == "op" and t.value == "break":
+			i += 1
+			o.append(Dialog.ASTNode.new(
+				"break", null, t.x, t.y, t.offset
+			))
+		if t.type == "op" and t.value == "continue":
+			i += 1
+			o.append(Dialog.ASTNode.new(
+				"continue", null, t.x, t.y, t.offset
+			))
+		if t.type == "op" and t.value == "exit":
+			i += 1
+			o.append(Dialog.ASTNode.new(
+				"exit", null, t.x, t.y, t.offset
+			))
 		
 		
 		var s = i
@@ -191,11 +231,16 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 		if s == i:
 			continue
 		var expr = tokens.slice(s, i)
-		if expr[-1].type == "op" and expr[-1].value == ":":
-			if len(expr) == 1:
+		var match1 = expr[-1].type == "op" and expr[-1].value == ":"
+		var match2 = expr[0].type == "op" and expr[0].value == "match"
+		if match1 or match2:
+			var matchexpr = expr.slice(int(match2), -int(match1))
+			if len(matchexpr) < 1:
 				push_error("Expected value to match at " + str(expr[0].y + 1) + ":" + str(expr[0].x + 1))
 				return []
-			var thing = expr.slice(0, -1)
+			var thing = Dialog.ASTNode.new(
+				"expr", parseExpression(matchexpr)[0], matchexpr[0].x, matchexpr[0].y, matchexpr[0].offset
+			)
 			i = skipNewLines(tokens, i)
 			var branches = []
 			var defaultBranch = null
@@ -204,7 +249,7 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 				var t2 = tokens[j]
 				if t2.type != "op":
 					break
-				if t2.value == "-":
+				if t2.value == "-" or t2.value == "case":
 					j += 1
 					var s2 = j
 					j = skipToNewline(tokens, j)
@@ -221,7 +266,7 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 					var scope = tokens[j]
 					j += 1
 					branches.append([expr3, parse(scope.value)])
-				elif t2.value == "--":
+				elif t2.value == "--" or t2.value == "else":
 					j += 1
 					j = skipNewLines(tokens, j)
 					if j >= L:
@@ -289,7 +334,7 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 						continue
 					elif t2.type != "op":
 						break
-					if t2.value == "-":
+					if t2.value == "-" or t2.value == "case":
 						j += 1
 						var s2 = j
 						j = skipToNewline(tokens, j)
@@ -399,6 +444,9 @@ const OP = {
 		";": 20,
 		
 		"=": 9,
+		"**=": 9, "*/=": 9, "*=": 9, "/=": 9, "%=": 9,
+		"//=": 9, "+=": 9, "-=": 9, "&&=": 9, "||=": 9,
+		"^^=": 9, "&=": 9, "^=": 9, "|=": 9, "?=": 9,  "?!=": 9,
 		
 		"->": 05,
 		
@@ -543,6 +591,7 @@ static func parseExpression(tokens: Array, topLevel: bool = true, start: int = 0
 		print(str(tokens.slice(i - 1).map(func(a): return a.dump())))
 		push_error("Unparsed leftover tokens in expression " + str(tokens.slice(i).map(func(a): return a.dump())) + " at " + str(et.y + 1) + ":" + str(et.x + 1))
 	
+	
 	return [left, i]
 
 static func parenExpr(right):
@@ -581,6 +630,8 @@ static func unaryExpr(right, op):
 				right.value,
 				op.x, op.y, op.offset
 			)
+		elif right.type == "array":
+			return right
 		else:
 			return Dialog.ASTNode.new(
 				"array",
@@ -652,6 +703,7 @@ static func binaryExpr(left, right, op):
 			for assign in right.value:
 				i += 1
 				if assign.type != "assign":
+				#if assign.type != "infixop" and assign.subtype != "=":
 					continue
 				if assign.value[0].type == "varid":
 					assign.value[0] = Dialog.ASTNode.new(

@@ -11,6 +11,7 @@ signal dialogStarted
 ## Emitted after ending dialog
 signal dialogEnded
 
+var __plugin
 
 class Message:
 	var type: String
@@ -22,7 +23,9 @@ class Message:
 static var _globals: Dictionary = {
 	"options": OptionsInput.new(),
 	"option": OptionsInput.new(),
-	"string": StringInput.new
+	"string": StringInput.new,
+	"digits": DigitsInput.new,
+	"number": NumberInput.new,
 }
 
 var currentBox: DialogBox = null
@@ -36,24 +39,29 @@ func getGlobal(name: String, default: Variant = null):
 
 
 class Options:
-	var variables: Dictionary = {}
 	var constants: Dictionary = {}
 	var canAccessAutoloads: bool = true
+	var canAccessNamedNodes: bool = true
+	var canAccessNodesByPath: bool = false
 	
 	func _init(
-		variables: Dictionary = {},
 		constants: Dictionary = {},
 		canAccessAutoloads: bool = true,
+		canAccessNamedNodes: bool = true,
+		canAccessNodesByPath: bool = false,
 	):
-		self.variables = variables
 		self.constants = constants
 		self.canAccessAutoloads = canAccessAutoloads
+		self.canAccessNamedNodes = canAccessNamedNodes
+		self.canAccessNodesByPath = canAccessNodesByPath
 
 ## Start a dialog from file[br][br]
 ## [code]dialog[/code]: path to the dialog resource in DDSL syntax[br]
+## [code]options[/code]: parameters for runtime execution. preferably, reuse same instances[br][br]
+## [code]variables[/code]: variables passed into the script[br][br]
 ## [code]callback[/code]: callable executed when dialog finishes[br][br]
 ## [code]return[/code]: returns Dictionary[String, Variant] of internal interpreter variables[br]
-func start(dialog: String, options: Options = null, callback: Callable = Callable()) -> Dictionary:
+func start(dialog: String, options: Options = null, variables: Dictionary = {}, callback: Callable = Callable()) -> Dictionary:
 	var text = FileAccess.get_file_as_string(dialog)
 	var err = FileAccess.get_open_error()
 	if err != OK:
@@ -63,27 +71,39 @@ func start(dialog: String, options: Options = null, callback: Callable = Callabl
 	#print("!!! ", parsed)
 	dialogStarted.emit()
 	var interpreter = _Interpreter.new({})
+	interpreter.variables = variables.duplicate()
 	if options != null:
-		if options.variables != null:
-			interpreter.variables = options.variables
 		if options.constants != null:
 			interpreter.constants = options.constants
 		interpreter.canAccessAutoloads = options.canAccessAutoloads
-	await interpreter.start(parsed)
+		interpreter.canAccessNamedNodes = options.canAccessNamedNodes
+		interpreter.canAccessNodesByPath = options.canAccessNodesByPath
+	var r = await interpreter.start(parsed)
+	if r != null:
+		if r is Message:
+			if r.type == "goto":
+				push_error("Trying to jump to a non-existant label " + str(r.data))
 	if callback.is_valid():
 		callback.call(interpreter.variables)
 	dialogEnded.emit()
 	return interpreter.variables
 
 
-## Start a dialog from file[br][br]
+## Start a dialog from a script source code string[br][br]
 ## [code]dialog[/code]: raw dialog script in DDSL syntax[br]
+## [code]options[/code]: parameters for runtime execution. preferably, reuse same instances[br][br]
+## [code]variables[/code]: variables passed into the script[br][br]
 ## [code]callback[/code]: callable executed when dialog finishes[br][br]
 ## [code]return[/code]: returns Dictionary[String, Variant] of internal interpreter variables[br]
-func startFromSource(source: String, options: Options = null, callback: Callable = Callable()) -> Dictionary:
+func startFromSource(source: String, options: Options = null, variables: Dictionary = {}, callback: Callable = Callable()) -> Dictionary:
 	var parsed = _parse(source)
 	dialogStarted.emit()
 	var interpreter = _Interpreter.new({})
+	interpreter.variables = variables.duplicate()
+	if options != null:
+		if options.constants != null:
+			interpreter.constants = options.constants
+		interpreter.canAccessAutoloads = options.canAccessAutoloads
 	var r = await interpreter.start(parsed)
 	if r != null:
 		if r is Message:
@@ -106,6 +126,8 @@ func _enter_tree():
 	_parser = preload("res://addons/ddsl/utils/parser.gd").parse
 	_exprparser = preload("res://addons/ddsl/utils/parser.gd").parseStandaloneExpression
 	_Interpreter = preload("res://addons/ddsl/interpreter.gd").Interpreter
+	
+	setBox(preload("res://addons/ddsl/styledbox/StylableDialogBox.tscn").instantiate())
 	
 	#anchor_left = 0
 	#anchor_top = 0
@@ -130,7 +152,31 @@ class StringInput extends InputOption:
 	func _init(l: int):
 		maxLen = l
 
+class DigitsInput extends InputOption:
+	var length: int
+	var digits: Array[String] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+	var type: Callable = func(v): return int(v)
+	func _init(l: int, d: Array[String] = [], t: Callable = Callable()):
+		length = l
+		if len(d) > 0:
+			digits = d
+			type = Callable()
+		if t.is_valid():
+			type = t
 
+class UniqueDigitsInput extends InputOption:
+	var length: int
+	var digits: Array[Array]
+	func _init(...digits: Array):
+		length = len(digits)
+		self.digits = digits
+
+class NumberInput extends InputOption:
+	var min
+	var max
+	func _init(minv, maxv):
+		min = minv
+		max = maxv
 
 class ASTNode:
 	var type
@@ -199,3 +245,12 @@ class ASTNode:
 		if thing.has("operands"):
 			node.operands = thing["operands"]
 		return node
+
+class Alias:
+	var name
+	var value
+	func _init(n, v):
+		name = n
+		value = v
+	func _to_string():
+		return str(name)

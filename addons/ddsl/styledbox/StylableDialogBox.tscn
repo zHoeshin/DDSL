@@ -1,0 +1,241 @@
+[gd_scene format=3 uid="uid://cgnif6k4ccfxh"]
+
+[ext_resource type="Script" uid="uid://ja56fnwl46wb" path="res://addons/ddsl/styledbox/box.gd" id="1_cxyl4"]
+[ext_resource type="Texture2D" uid="uid://bmd0qvrm7ipfw" path="res://addons/ddsl/styledbox/defaultBox.png" id="2_pjatb"]
+[ext_resource type="PackedScene" uid="uid://cybuvobwg61jy" path="res://addons/ddsl/styledbox/digit.tscn" id="3_f0ba2"]
+[ext_resource type="Texture2D" uid="uid://cbc06s7j6ebpp" path="res://addons/ddsl/styledbox/defaultUpActive.png" id="4_f0ba2"]
+[ext_resource type="Texture2D" uid="uid://dftirq05vaqtl" path="res://addons/ddsl/styledbox/defaultDownActive.png" id="5_1ek2w"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_4adf4"]
+offset = Vector3(166.67, -162.16, 0)
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_hyqap"]
+width = 64
+height = 64
+noise = SubResource("FastNoiseLite_4adf4")
+
+[node name="StylableDialogBox" type="Control" unique_id=276406493]
+layout_mode = 3
+anchor_left = 0.1
+anchor_top = 0.05
+anchor_right = 0.9
+anchor_bottom = 0.38
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cxyl4")
+metadata/_custom_type_script = "uid://s1qltmg40guq"
+
+[node name="timers" type="Node" parent="." unique_id=166369872]
+
+[node name="skip" type="Timer" parent="timers" unique_id=1508720309]
+wait_time = 0.05
+
+[node name="bg" type="NinePatchRect" parent="." unique_id=696657855]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_pjatb")
+patch_margin_left = 12
+patch_margin_top = 12
+patch_margin_right = 12
+patch_margin_bottom = 12
+
+[node name="container" type="HBoxContainer" parent="." unique_id=2047288951]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="sprite" type="TextureRect" parent="container" unique_id=420689667]
+layout_mode = 2
+texture = SubResource("NoiseTexture2D_hyqap")
+expand_mode = 2
+
+[node name="margin" type="ColorRect" parent="container" unique_id=296569807]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+color = Color(1, 1, 1, 0)
+
+[node name="io" type="Control" parent="container" unique_id=1865341611]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="split" type="VBoxContainer" parent="container/io" unique_id=1550095511]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="output" type="RichTextLabel" parent="container/io/split" unique_id=1410699645]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 40
+theme_override_font_sizes/bold_font_size = 40
+theme_override_font_sizes/bold_italics_font_size = 40
+theme_override_font_sizes/italics_font_size = 40
+theme_override_font_sizes/mono_font_size = 40
+bbcode_enabled = true
+text = "Lorem ipsum"
+fit_content = true
+
+[node name="digits" type="HBoxContainer" parent="container/io/split" unique_id=1553094593]
+visible = false
+layout_mode = 2
+alignment = 1
+
+[node name="number" type="HBoxContainer" parent="container/io/split" unique_id=1913408682]
+visible = false
+layout_mode = 2
+alignment = 1
+
+[node name="sign" type="Label" parent="container/io/split/number" unique_id=1595278318]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+
+[node name="wrapper" type="HBoxContainer" parent="container/io/split/number" unique_id=2027300298]
+layout_mode = 2
+
+[node name="sign2" type="Label" parent="container/io/split/number" unique_id=926997418]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+
+[node name="options" type="Control" parent="container/io/split" unique_id=25119677]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="wrapper" type="VBoxContainer" parent="container/io/split/options" unique_id=208618666]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="examples" type="VBoxContainer" parent="container/io" unique_id=289129497]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="output" type="RichTextLabel" parent="container/io/examples" unique_id=1213845649]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 40
+theme_override_font_sizes/bold_font_size = 40
+theme_override_font_sizes/bold_italics_font_size = 40
+theme_override_font_sizes/italics_font_size = 40
+theme_override_font_sizes/mono_font_size = 40
+bbcode_enabled = true
+text = "Lorem ipsum"
+fit_content = true
+
+[node name="digits" type="HBoxContainer" parent="container/io/examples" unique_id=1747687002]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Digit1" parent="container/io/examples/digits" unique_id=591020368 instance=ExtResource("3_f0ba2")]
+layout_mode = 2
+digit = 7
+arrowUp = ExtResource("4_f0ba2")
+arrowDown = ExtResource("5_1ek2w")
+colorUnselected = Color(1, 1, 0, 1)
+
+[node name="Digit2" parent="container/io/examples/digits" unique_id=807138386 instance=ExtResource("3_f0ba2")]
+layout_mode = 2
+digit = 2
+
+[node name="Digit3" parent="container/io/examples/digits" unique_id=1286234136 instance=ExtResource("3_f0ba2")]
+layout_mode = 2
+digit = -5
+
+[node name="number" type="HBoxContainer" parent="container/io/examples" unique_id=14370782]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Sign" type="Label" parent="container/io/examples/number" unique_id=573933825]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "-"
+
+[node name="Digit1" parent="container/io/examples/number" unique_id=265551067 instance=ExtResource("3_f0ba2")]
+layout_mode = 2
+digit = 9
+
+[node name="Digit2" parent="container/io/examples/number" unique_id=1542227552 instance=ExtResource("3_f0ba2")]
+layout_mode = 2
+digit = 1
+
+[node name="Digit3" parent="container/io/examples/number" unique_id=72320516 instance=ExtResource("3_f0ba2")]
+layout_mode = 2
+digit = -5
+arrowUp = ExtResource("4_f0ba2")
+arrowDown = ExtResource("5_1ek2w")
+
+[node name="Sign2" type="Label" parent="container/io/examples/number" unique_id=1796309011]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "-"
+
+[node name="options" type="Control" parent="container/io/examples" unique_id=1930317042]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="wrapper" type="VBoxContainer" parent="container/io/examples/options" unique_id=1624106793]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="1" type="RichTextLabel" parent="container/io/examples/options/wrapper" unique_id=1107683589]
+modulate = Color(1, 1, 0, 1)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 40
+theme_override_font_sizes/bold_font_size = 40
+theme_override_font_sizes/bold_italics_font_size = 40
+theme_override_font_sizes/italics_font_size = 40
+theme_override_font_sizes/mono_font_size = 40
+bbcode_enabled = true
+text = "[color=yellow]Yes[/color]"
+fit_content = true
+
+[node name="2" type="RichTextLabel" parent="container/io/examples/options/wrapper" unique_id=1220350064]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 40
+theme_override_font_sizes/bold_font_size = 40
+theme_override_font_sizes/bold_italics_font_size = 40
+theme_override_font_sizes/italics_font_size = 40
+theme_override_font_sizes/mono_font_size = 40
+text = "No"
+fit_content = true
+
+[connection signal="timeout" from="timers/skip" to="." method="endOutput"]

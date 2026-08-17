@@ -29,8 +29,6 @@ const OP = {
 }
 
 
-
-
 class Reference:
 	pass
 
@@ -78,14 +76,7 @@ class Reference3 extends Reference:
 		return Reference3.new(parent[key1], key2, key3, key)
 
 
-class Alias:
-	var name
-	var value
-	func _init(n, v):
-		name = n
-		value = v
-
-class Interpreter:
+class Interpreter extends RefCounted:
 	static var builtins: Dictionary[String, Variant] = {
 		"abs": abs, "absf": absf, "absi": absi, "acos": acos, "acosh": acosh,
 		"asin": asin, "asinh": asinh, "atan": atan, "atan2": atan2, "atanh": atanh,
@@ -404,9 +395,18 @@ class Interpreter:
 			,
 	}
 	
+	const ASSIGN = [
+		
+		"**=", "*/=", "*=", "/=", "%=",
+		"//=", "+=", "-=", "&&=", "||=",
+		"^^=", "&=", "^=", "|=", "?=",  "?!=",
+	]
+	
 	var variables: Dictionary = {}
 	var constants: Dictionary = {}
 	var canAccessAutoloads: bool = true
+	var canAccessNamedNodes: bool = true
+	var canAccessNodesByPath: bool = false
 	var labels: Dictionary = {}
 	var labelsstack: Array[Dictionary] = []
 	var ci: int = 0
@@ -423,6 +423,8 @@ class Interpreter:
 				ci = labels[r.data]
 			else:
 				return r
+		else:
+			return r
 	
 	func start(ast: Array[Dialog.ASTNode]):
 		cistack.push_back(ci)
@@ -462,16 +464,36 @@ class Interpreter:
 								if r2 != null:
 									return r2
 							break
+				"while":
+					while self.bool(await evaluate(node.value["cond"], true, null)):
+						var r = await start(node.value["body"])
+						ci = cistack.pop_back()
+						labels = labelsstack.pop_back()
+						if r != null:
+							if r.type == "break":
+								break
+							elif r.type == "continue":
+								pass
+							else:
+								var r2 = handleMessage(r)
+								if r2 != null:
+									return r2
+				"break":
+					return Dialog.Message.new("break", node)
+				"continue":
+					return Dialog.Message.new("continue", node)
+				"exit":
+					return Dialog.Message.new("exit", node)
 				"match":
-					var matchee = await evaluate(node.value["match"], true, null)
+					var matchee = await evaluate(node.value["match"].value, true, null)
 					var matched = false
-					for case_body in node.value["braches"]:
+					for case_body in node.value["branches"]:
 						if case_body[0] == null:
 							#await start(case_body[1])
 							#break
 							continue
 						#elif await evaluate(case_body[0], true, null) == matchee:
-						elif self.match(matchee, await evaluate(case_body[0], true, null)):
+						elif self.match(matchee, await evaluate(case_body[0].value, true, null)):
 							var r = await start(case_body[1])
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
@@ -530,7 +552,10 @@ class Interpreter:
 					var matched = false
 					while i < len(cases):
 						#if cases[i] == value:
-						if self.match(value, cases[i]):
+						var case = cases[i]
+						if case is Dialog.Alias:
+							case = case.value
+						if self.match(value, case):
 							if len(bodies[i]) == 0:
 								matched = true
 								break
@@ -544,7 +569,7 @@ class Interpreter:
 							matched = true
 							break
 						i += 1
-					if not matched:
+					if not matched and node.value["default"] != null:
 						var r = await start(node.value["default"])
 						ci = cistack.pop_back()
 						labels = labelsstack.pop_back()
@@ -573,7 +598,6 @@ class Interpreter:
 	func evaluate(expr: Dialog.ASTNode, isValue: bool, _def: Variant, canTuple: bool = false) -> Variant:
 		if expr == null:
 			return null
-		#print(expr.dump())
 		match expr.type:
 			"output":
 				var sprite = await evaluate(expr.value["sprite"], true, null)
@@ -585,9 +609,9 @@ class Interpreter:
 				await Dialog.currentBox.outputComplete
 				return text
 			"infixop":
-				var op = expr.subtype
+				var op = expr.subtype as String
 				if op == "as":
-					return Alias.new(
+					return Dialog.Alias.new(
 						await evaluate(expr.value[1], isValue, _def),
 						await evaluate(expr.value[0], isValue, _def),
 					)
@@ -626,6 +650,16 @@ class Interpreter:
 					var result =  (callable).callv(args)
 					return result
 					#return null
+				
+				if op == "=":
+					var assignee = await evaluate(expr.value[0], false, _def)
+					var value = await evaluate(expr.value[1], true, _def)
+					if assignee is Reference:
+						assignee.setValue(value)
+					else:
+						push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
+					return value
+				
 				if op == "?!":
 					var value = await evaluate(expr.value[0], true, _def)
 					if value != null:
@@ -647,55 +681,100 @@ class Interpreter:
 						return value
 					return null
 				
-				if op == "&&":
+				if op == "&&" or op == "&&=":
 					var a = await evaluate(expr.value[0], true, _def)
 					var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
-					if not bool_a: return false
+					if not bool_a:
+						if op == "&&=":
+							var assignee = await evaluate(expr.value[0], false, _def)
+							if assignee is Reference:
+								assignee.setValue(false)
+							else:
+								push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
+						return false
 					var b = await evaluate(expr.value[1], true, _def)
 					var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
+					if op == "&&=":
+						var assignee = await evaluate(expr.value[0], false, _def)
+						if assignee is Reference:
+							assignee.setValue(bool_b)
+						else:
+							push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
 					return bool_b
-				if op == "||":
+				if op == "||" or op == "||=":
 					var a = await evaluate(expr.value[0], true, _def)
 					var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
-					if bool_a: return true
+					if bool_a:
+						if op == "||=":
+							var assignee = await evaluate(expr.value[0], false, _def)
+							if assignee is Reference:
+								assignee.setValue(true)
+							else:
+								push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
+						return true
 					var b = await evaluate(expr.value[1], true, _def)
 					var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
+					if op == "||=":
+						var assignee = await evaluate(expr.value[0], false, _def)
+						if assignee is Reference:
+							assignee.setValue(bool_b)
+						else:
+							push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
 					return bool_b
 					
 				var a = await evaluate(expr.value[0], true, _def)
 				var b = await evaluate(expr.value[1], true, _def)
+				
+				var assigning = op in ASSIGN
+				if assigning:
+					op = op.substr(0, len(op) - 1)
+				
+				var result
 				var opid = OP["infix"].get(op)
 				#if opid == null: return null
 				if a is Object and a.has_method(opid):
-					return a.callv(opid, [b])
-				if b is Object and b.has_method(opid + "_r"):
-					return b.callv(opid + "_r", [a])
-				match op:
-					"in": return a in b
-					"**": return a ** b
-					"*/": return a ** (1.0 / b)
-					"*": return a * b
-					"/":
-						if typeof(a) == TYPE_INT and typeof(b) == TYPE_INT:
-							return float(a) / float(b)
-						return a / b
-					"%": return a % b
-					"//": return floor(a / b)
-					"+": return a + b
-					"-": return a - b
-					">": return a > b
-					"<": return a < b
-					">=": return a >= b
-					"<=": return a <= b
-					"==": return a == b
-					"!=": return a != b
-					"^^":
-						var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
-						var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
-						return bool(bool_a) != bool(bool_b)
-					"&": return a & b
-					"^": return a ^ b
-					"|": return a | b
+					result = a.callv(opid, [b])
+				elif b is Object and b.has_method(opid + "_r"):
+					result = b.callv(opid + "_r", [a])
+				else:
+					match op:
+						"in":
+							#prints(a, b)
+							result = a in b
+						"**": result = a ** b
+						"*/": result = a ** (1.0 / b)
+						"*": result = a * b
+						"/":
+							if typeof(a) == TYPE_INT and typeof(b) == TYPE_INT:
+								result = float(a) / float(b)
+							else:
+								result = a / b
+						"%": result = a % b
+						"//": result = floor(a / b)
+						"+": result = a + b
+						"-": result = a - b
+						">": result = a > b
+						"<": result = a < b
+						">=": result = a >= b
+						"<=": result = a <= b
+						"==": result = a == b
+						"!=": result = a != b
+						"^^":
+							var bool_a = a._to_bool() if a is Object and a.has_method("_to_bool") else a
+							var bool_b = b._to_bool() if b is Object and b.has_method("_to_bool") else b 
+							result = bool(bool_a) != bool(bool_b)
+						"&": result = a & b
+						"^": result = a ^ b
+						"|": result = a | b
+				
+				if assigning:
+					var assignee = await evaluate(expr.value[0], false, _def)
+					if assignee is Reference:
+						assignee.setValue(result)
+					else:
+						push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
+				
+				return result
 				
 			"prefixop":
 				var op = expr.subtype
@@ -714,14 +793,6 @@ class Interpreter:
 					"-": return -v
 					"~": return ~v
 					"!": return !v
-			"assign":
-				var assignee = await evaluate(expr.value[0], false, _def)
-				var value = await evaluate(expr.value[1], true, _def)
-				if assignee is Reference:
-					assignee.setValue(value)
-				else:
-					push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
-				return value
 			"array":
 				var a = []
 				for t in expr.value:
@@ -741,12 +812,20 @@ class Interpreter:
 				var d = {}
 				for pair in expr.value:
 					if pair.type == "assign":
+					#if pair.type == "infixop" and pair.subtype == "=":
 						d[await evaluate(pair.value[0], true, _def)] = \
 						await evaluate(pair.value[1], true, _def)
 					else:
 						d[await evaluate(pair, true, _def)] = await evaluate(pair, true, _def)
 				return d
-			
+			"assign":
+				var assignee = await evaluate(expr.value[0], false, _def)
+				var value = await evaluate(expr.value[1], true, _def)
+				if assignee is Reference:
+					assignee.setValue(value)
+				else:
+					push_error("Trying to assign to a value " + str(assignee) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
+				return value
 			"numdec":
 				return expr.value
 			"numint":
@@ -783,6 +862,34 @@ class Interpreter:
 				else:
 					if source == null: source = variables
 					return Reference1.new(source, name)
+			"varuniquenode":
+				if not canAccessNamedNodes:
+					push_error("Permission to access nodes by unique name denied")
+					return null
+				var root = (Engine.get_main_loop() as SceneTree).current_scene as Node
+				if not root:
+					push_error("Cannot access node %" + expr.value + " before initialization")
+					return null
+				var node = root.get_node_or_null("%" + expr.value)
+				if not node:
+					push_error("Cannot access node %" + expr.value + " that does not exist")
+					return null
+				return node
+			"varnode":
+				if not canAccessNodesByPath:
+					push_error("Permission to access nodes by path denied")
+					return null
+				var root = (Engine.get_main_loop() as SceneTree).current_scene as Node
+				if not root:
+					push_error("Cannot access node " + expr.value + " before initialization")
+					return null
+				if expr.value == "":
+					return root
+				var node = root.get_node_or_null(expr.value)
+				if not node:
+					push_error("Cannot access node " + expr.value + " that does not exist")
+					return null
+				return node
 			"varglobal":
 				if isValue:
 					return Dialog.getGlobal(expr.value)
@@ -862,3 +969,10 @@ class Interpreter:
 		if a is Reference:
 			return a.getMember(k)
 		return Reference1.new(a, k)
+	
+	func bool(value: Variant) -> bool:
+		if value is Object and value.has_method("_to_bool"):
+			return value._to_bool.call()
+		if value:
+			return true
+		return false
