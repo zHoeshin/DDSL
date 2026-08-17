@@ -315,6 +315,10 @@ func _ready():
 	$container/io/examples.hide()
 	$container/io/split.show()
 
+func _exit_tree():
+	$container/io/examples.show()
+	$container/io/split.hide()
+
 var timer: float = 0.0
 func _process(delta):
 	match currentState:
