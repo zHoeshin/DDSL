@@ -2,7 +2,7 @@
 name: Regression template
 about: A feature that worked in the past but was broken by an update
 title: "[REGRESSION]"
-labels: ''
+labels: regression
 assignees: ''
 
 ---
