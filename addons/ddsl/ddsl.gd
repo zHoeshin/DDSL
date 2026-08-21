@@ -12,7 +12,7 @@ func _enter_tree():
 	_initialized = true
 	
 	add_autoload_singleton("Dialog", "dialog.gd")
-	Dialog.__plugin = self
+	#Dialog.__plugin = self
 	
 	highlighter = DDSLSyntaxHighlight.new()
 	EditorInterface.get_script_editor().register_syntax_highlighter(highlighter)

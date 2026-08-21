@@ -87,7 +87,7 @@ class Interpreter extends RefCounted:
 		"is_instance_valid": is_instance_valid, "is_nan": is_nan, "is_zero_approx": is_zero_approx, "lerp": lerp, "lerp_angle": lerp_angle,
 		"linear_to_db": linear_to_db, "load": load, "log": log, "max": max, "min": min,
 		"move_toward": move_toward, "nearest_po2": nearest_po2, "posmod": posmod, "pow": pow,
-		"print": print, "print_debug": print_debug, "print_stack": print_stack, "rad_to_deg": rad_to_deg, "randf": randf,
+		"print": print, "print_debug": print_debug, "print_stack": print_stack, "rad_to_deg": rad_to_deg, "randf": randf, "range": range,
 		"randf_range": randf_range, "randi": randi, "randi_range": randi_range, "randomize": randomize,
 		"round": round, "seed": seed, "sign": sign, "sin": sin, "sinh": sinh,
 		"smoothstep": smoothstep, "snapped": snapped, "sqrt": sqrt, "str": str,
@@ -404,9 +404,7 @@ class Interpreter extends RefCounted:
 	
 	var variables: Dictionary = {}
 	var constants: Dictionary = {}
-	var canAccessAutoloads: bool = true
-	var canAccessNamedNodes: bool = true
-	var canAccessNodesByPath: bool = false
+	var options: Dialog.Options
 	var labels: Dictionary = {}
 	var labelsstack: Array[Dictionary] = []
 	var ci: int = 0
@@ -426,7 +424,7 @@ class Interpreter extends RefCounted:
 		else:
 			return r
 	
-	func start(ast: Array[Dialog.ASTNode]):
+	func start(ast: Array[Dialog.ASTNode], _def: Dictionary):
 		cistack.push_back(ci)
 		labelsstack.push_back(labels)
 		ci = 0
@@ -435,7 +433,7 @@ class Interpreter extends RefCounted:
 			var node = ast[ci]
 			ci += 1
 			if node.type == "label":
-				labels[await evaluate(node.value, true, null)] = ci
+				labels[await evaluate(node.value, true, _def)] = ci
 		ci = 0
 		while ci < len(ast):
 			var node = ast[ci]
@@ -444,7 +442,7 @@ class Interpreter extends RefCounted:
 				"if":
 					for cond_body in node.value:
 						if cond_body[0] == null:
-							var r = await start(cond_body[1])
+							var r = await start(cond_body[1], _def)
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
 							if r != null:
@@ -452,11 +450,11 @@ class Interpreter extends RefCounted:
 								if r2 != null:
 									return r2
 							break
-						var v = await evaluate(cond_body[0], true, null)
+						var v = await evaluate(cond_body[0], true, _def)
 						if v is Object and v.has_method("_to_bool"):
 							v = v._to_bool()
 						if v:
-							var r = await start(cond_body[1])
+							var r = await start(cond_body[1], _def)
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
 							if r != null:
@@ -465,8 +463,23 @@ class Interpreter extends RefCounted:
 									return r2
 							break
 				"while":
-					while self.bool(await evaluate(node.value["cond"], true, null)):
-						var r = await start(node.value["body"])
+					while self.bool(await evaluate(node.value["cond"], true, _def)):
+						var r = await start(node.value["body"], _def)
+						ci = cistack.pop_back()
+						labels = labelsstack.pop_back()
+						if r != null:
+							if r.type == "break":
+								break
+							elif r.type == "continue":
+								pass
+							else:
+								var r2 = handleMessage(r)
+								if r2 != null:
+									return r2
+				"for":
+					var name = node.value["name"]
+					for it in await evaluate(node.value["iter"], true, _def):
+						var r = await start(node.value["body"], _def.merged({(name): it}, true))
 						ci = cistack.pop_back()
 						labels = labelsstack.pop_back()
 						if r != null:
@@ -479,13 +492,13 @@ class Interpreter extends RefCounted:
 								if r2 != null:
 									return r2
 				"break":
-					return Dialog.Message.new("break", node)
+					return Dialog.Message.new("break", null, node)
 				"continue":
-					return Dialog.Message.new("continue", node)
+					return Dialog.Message.new("continue", null, node)
 				"exit":
-					return Dialog.Message.new("exit", node)
+					return Dialog.Message.new("exit", null, node)
 				"match":
-					var matchee = await evaluate(node.value["match"].value, true, null)
+					var matchee = await evaluate(node.value["match"].value, true, _def)
 					var matched = false
 					for case_body in node.value["branches"]:
 						if case_body[0] == null:
@@ -493,8 +506,8 @@ class Interpreter extends RefCounted:
 							#break
 							continue
 						#elif await evaluate(case_body[0], true, null) == matchee:
-						elif self.match(matchee, await evaluate(case_body[0].value, true, null)):
-							var r = await start(case_body[1])
+						elif self.match(matchee, await evaluate(case_body[0].value, true, _def)):
+							var r = await start(case_body[1], _def)
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
 							if r != null:
@@ -504,7 +517,7 @@ class Interpreter extends RefCounted:
 							matched = true
 							break
 					if not matched:
-						var r = await start(node.value["default"])
+						var r = await start(node.value["default"], _def)
 						ci = cistack.pop_back()
 						labels = labelsstack.pop_back()
 						if r != null:
@@ -513,34 +526,34 @@ class Interpreter extends RefCounted:
 								return r2
 				"expr":
 					if node.value.type == "infixop" and node.value.subtype == ":":
-						await evaluate(node.value, true, null)
+						await evaluate(node.value, true, _def)
 					elif node.value.type == "goto":
-						var l = await evaluate(node.value.value, true, null)
+						var l = await evaluate(node.value.value, true, _def)
 						if l == null:
 							pass
 						if l in labels:
 							print(labels[l])
 							ci = labels[l]
 						else:
-							return Dialog.Message.new("goto", l)
+							return Dialog.Message.new("goto", l, node)
 					else:
-						evaluate(node.value, true, null)
+						evaluate(node.value, true, _def)
 				"input":
 					var assignee
 					if node.value["var"] == null:
 						assignee = null
 					else:
-						assignee = await evaluate(node.value["var"].value, false, null)
+						assignee = await evaluate(node.value["var"].value, false, _def)
 					var cases = []
 					var bodies = []
 					for branch in node.value["branches"]:
-						var case = await evaluate(branch[0].value, true, null)
+						var case = await evaluate(branch[0].value, true, _def)
 						if case == null: continue
 						cases.append(case)
 						bodies.append(branch[1])
-					var options = await evaluate(node.value["options"], true, null)
+					var options = await evaluate(node.value["options"], true, _def)
 					if options == null: options = {}
-					Dialog.currentBox.input(await evaluate(node.value["option"].value, true, null), cases, options)
+					Dialog.currentBox.input(await evaluate(node.value["option"].value, true, _def), cases, options)
 					var value = await Dialog.currentBox.inputComplete
 					if assignee == null:
 						pass
@@ -559,7 +572,7 @@ class Interpreter extends RefCounted:
 							if len(bodies[i]) == 0:
 								matched = true
 								break
-							var r = await start(bodies[i])
+							var r = await start(bodies[i], _def)
 							ci = cistack.pop_back()
 							labels = labelsstack.pop_back()
 							if r != null:
@@ -570,7 +583,7 @@ class Interpreter extends RefCounted:
 							break
 						i += 1
 					if not matched and node.value["default"] != null:
-						var r = await start(node.value["default"])
+						var r = await start(node.value["default"], _def)
 						ci = cistack.pop_back()
 						labels = labelsstack.pop_back()
 						if r != null:
@@ -578,9 +591,9 @@ class Interpreter extends RefCounted:
 							if r2 != null:
 								return r2
 				"output":
-					var sprite = await evaluate(node.value["sprite"], true, null)
-					var text = await evaluate(node.value["text"], true, null)
-					var options = await evaluate(node.value["options"], true, null)
+					var sprite = await evaluate(node.value["sprite"], true, _def)
+					var text = await evaluate(node.value["text"], true, _def)
+					var options = await evaluate(node.value["options"], true, _def)
 					if options == null: options = {}
 					if Dialog.currentBox == null:
 						push_error("No dialog box is currently selected")
@@ -590,19 +603,28 @@ class Interpreter extends RefCounted:
 					await Dialog.currentBox.outputComplete
 					continue
 				"box":
-					var box = await evaluate(node.value, true, null)
-					if box is not DialogBox:
+					var box = await evaluate(node.value["box"], true, _def)
+					if box == null:
+						box = preload("res://addons/ddsl/styledbox/StylableDialogBox.tscn").instantiate()
+					elif box is not DialogBox:
 						push_error("Dialog style must be a DialogBox got " + str(box) + " at " + str(node.y + 1) + ":" + str(node.x + 1))
-					Dialog.setBox(box)
+					var type = node.value["type"]
+					match type:
+						"set":
+							Dialog.setBox(box)
+						"pop":
+							Dialog.popBox(box)
+						"push":
+							Dialog.pushBox(box)
 	
-	func evaluate(expr: Dialog.ASTNode, isValue: bool, _def: Variant, canTuple: bool = false) -> Variant:
+	func evaluate(expr: Dialog.ASTNode, isValue: bool, _def: Dictionary, canTuple: bool = false) -> Variant:
 		if expr == null:
 			return null
 		match expr.type:
 			"output":
-				var sprite = await evaluate(expr.value["sprite"], true, null)
-				var text = await evaluate(expr.value["text"], true, null)
-				var options = await evaluate(expr.value["options"], true, null)
+				var sprite = await evaluate(expr.value["sprite"], true, _def)
+				var text = await evaluate(expr.value["text"], true, _def)
+				var options = await evaluate(expr.value["options"], true, _def)
 				if options == null: options = {}
 				Dialog.currentBox.show()
 				Dialog.currentBox.output(sprite, str(text), options)
@@ -782,7 +804,11 @@ class Interpreter extends RefCounted:
 					return await evaluate(expr.value, true, _def)
 				var v = await evaluate(expr.value, true, _def)
 				if op == "tr":
-					if v is Object and v.has_method("_tr"):
+					if typeof(v) == TYPE_STRING:
+						return await evaluateString(tr(
+							await evaluateString(v, _def)
+						), _def)
+					elif v is Object and v.has_method("_tr"):
 						return v._tr()
 					else:
 						return tr(str(v))
@@ -832,11 +858,11 @@ class Interpreter extends RefCounted:
 				return expr.value
 			"string":
 				#return expr.value
-				return await evaluateString(expr.value)
+				return await evaluateString(expr.value, _def)
 			"trstring":
 				return await evaluateString(tr(
-					await evaluateString(expr.value)
-				))
+					await evaluateString(expr.value, _def)
+				), _def)
 			"varid", "varfile":
 				var name = expr.value
 				var source = null
@@ -844,8 +870,16 @@ class Interpreter extends RefCounted:
 					source = variables
 				elif name in constants:
 					return constants[name]
-				elif canAccessAutoloads and Engine.get_main_loop().root.has_node(str(name)):
-					return Engine.get_main_loop().root.get_node(str(name))
+				elif Engine.get_main_loop().root.has_node(str(name)):
+					var autoload = Engine.get_main_loop().root.get_node(str(name))
+					var capability
+					if "_capability" in autoload:
+						capability = autoload._capability
+					else:
+						capability = options.defaultAutoloadCapability
+					if options.autoloadCapability >= capability:
+						return autoload
+					push_error("Trying to access autoload " + str(name) + " with capability " + str(capability) + " but interpreter has capability " + str(options.autoloadCapability) + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
 				elif name in Dialog._globals:
 					return Dialog._globals[name]
 				elif name in builtins:
@@ -854,8 +888,8 @@ class Interpreter extends RefCounted:
 					return constructors[name]
 				if isValue:
 					if source == null:
-						if _def != null and name == "_":
-							return _def
+						if _def != null and name in _def:
+							source = _def
 						else:
 							source = variables
 					return source.get(name, null)
@@ -863,7 +897,7 @@ class Interpreter extends RefCounted:
 					if source == null: source = variables
 					return Reference1.new(source, name)
 			"varuniquenode":
-				if not canAccessNamedNodes:
+				if not options.canAccessNamedNodes:
 					push_error("Permission to access nodes by unique name denied")
 					return null
 				var root = (Engine.get_main_loop() as SceneTree).current_scene as Node
@@ -876,7 +910,7 @@ class Interpreter extends RefCounted:
 					return null
 				return node
 			"varnode":
-				if not canAccessNodesByPath:
+				if not options.canAccessNodesByPath:
 					push_error("Permission to access nodes by path denied")
 					return null
 				var root = (Engine.get_main_loop() as SceneTree).current_scene as Node
@@ -905,7 +939,7 @@ class Interpreter extends RefCounted:
 			
 		return null
 		
-	func evaluateString(s: String):
+	func evaluateString(s: String, _def: Dictionary):
 		const escaped = {
 			"a": "\a",
 			"b": "\b",
@@ -942,7 +976,7 @@ class Interpreter extends RefCounted:
 				var e = Dialog._exprparser.call(
 					Dialog._tokenize.call(exprs)
 				)
-				var v = await evaluate(e, true, null)
+				var v = await evaluate(e, true, _def)
 				output += str(v)
 				i = j - 1
 			else:

@@ -130,12 +130,24 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 		var t = tokens[i]
 		#push_error(t)
 		if t.type == "scope[]":
-			var pexpr = parseExpression(t.value)[0]
+			var expr = t.value
+			var pexpr
+			if len(expr) == 0 and expr.type == "op" and expr.value == "-":
+				pexpr = null
+			else:
+				pexpr = parseExpression(t.value)[0]
 			if pexpr == null:
 				push_error("Expected a box but got nothing at " + str(t.y + 1) + ":" + str(t.x + 1))
 				return null
+			var btype = "set"
+			if pexpr.type == "prefixop" and pexpr.subtype == "-":
+				btype = "pop"
+				pexpr = pexpr.value
+			elif pexpr.type == "prefixop" and pexpr.subtype == "+":
+				btype = "push"
+				pexpr = pexpr.value
 			o.append(Dialog.ASTNode.new(
-				"box", pexpr, t.x, t.y, t.offset
+				"box", {"box": pexpr, "type": btype}, t.x, t.y, t.offset
 			))
 			i += 1
 			continue
@@ -209,21 +221,52 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 					"cond": expr, "body": parse(scope.value)
 				}, t.x, t.y, t.offset
 			))
+			continue
+		if t.type == "op" and t.value == "for":
+			i += 1
+			var s = i
+			i = skipToNewline(tokens, i)
+			if s == i:
+				push_error("Expected iterator for for loop at " + str(t.y + 1) + ":" + str(t.x + 1))
+				return []
+			var expr = parseExpression(tokens.slice(s, i))[0]
+			if expr.type != "infixop" or expr.subtype != "in":
+				push_error("Expected an iterator for for loop using `for . in .` but got " + expr.subtype + " at " + str(expr.y + 1) + ":" + str(expr.x + 1))
+				return []
+			var name = expr.value[0]
+			if name.type != "varid":
+				push_error("Expected iterator variable name but got " + str(name) + " at " + str(name.y + 1) + ":" + str(name.x + 1))
+				return []
+			i = skipNewLines(tokens, i)
+			if i >= L:
+				push_error("Expected body after for loop at " + str(t.y + 1) + ":" + str(t.x + 1))
+				return []
+			var scope = tokens[i]
+			i += 1
+			o.append(Dialog.ASTNode.new(
+				"for", {
+					"name": name.value, "iter": expr.value[1] ,"body": parse(scope.value)
+				}, t.x, t.y, t.offset
+			))
+			continue
 		if t.type == "op" and t.value == "break":
 			i += 1
 			o.append(Dialog.ASTNode.new(
 				"break", null, t.x, t.y, t.offset
 			))
+			continue
 		if t.type == "op" and t.value == "continue":
 			i += 1
 			o.append(Dialog.ASTNode.new(
 				"continue", null, t.x, t.y, t.offset
 			))
+			continue
 		if t.type == "op" and t.value == "exit":
 			i += 1
 			o.append(Dialog.ASTNode.new(
 				"exit", null, t.x, t.y, t.offset
 			))
+			continue
 		
 		
 		var s = i
@@ -417,7 +460,7 @@ static func parse(tokens: Array[Dialog.ASTNode]):
 
 const OP = {
 	"infixprec": {
-		"in": 200,
+		"in": 05,
 		
 		"()": 360,
 
@@ -459,7 +502,7 @@ const OP = {
 	"prefixprec": {
 		"await": 260,
 		"~": 260,
-		"!": 190,
+		"!": 2, #190,
 		"+": 260,
 		"-": 260,
 		"()": 260,
@@ -590,7 +633,7 @@ static func parseExpression(tokens: Array, topLevel: bool = true, start: int = 0
 		var et = tokens[i]
 		print(str(tokens.slice(i - 1).map(func(a): return a.dump())))
 		push_error("Unparsed leftover tokens in expression " + str(tokens.slice(i).map(func(a): return a.dump())) + " at " + str(et.y + 1) + ":" + str(et.x + 1))
-	
+		push_error(left)
 	
 	return [left, i]
 

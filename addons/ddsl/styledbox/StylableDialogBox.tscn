@@ -71,7 +71,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="split" type="VBoxContainer" parent="container/io" unique_id=1550095511]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -129,6 +128,7 @@ theme_override_constants/separation = 0
 alignment = 1
 
 [node name="examples" type="VBoxContainer" parent="container/io" unique_id=289129497]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

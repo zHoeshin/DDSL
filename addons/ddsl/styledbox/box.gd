@@ -6,16 +6,27 @@ class_name StylableDialogBox
 @onready var bgNode: NinePatchRect = $bg
 @onready var container: HBoxContainer = $container
 
+func _enter_tree():
+	if len(get_children()) > 0:
+		return
+	var node = preload("res://addons/ddsl/styledbox/StylableDialogBox.tscn").instantiate()
+	for child in node.get_children():
+		node.remove_child(child)
+		add_child(child)
+	node.queue_free()
+
 @export_enum("Text", "Options", "Digits", "Number", "More to come") var preview: String = "Text":
 	set(value):
 		if not is_node_ready():
 			return
 		if not Engine.is_editor_hint():
-			$container/io/examples.hide()
+			self.get_node("container/io/examples").hide()
 			return
+		$container/io/split.hide()
+		$container/io/examples.show()
 		match preview:
 			"Options":
-				$container/io/examples/options.hide()
+				self.get_node("container/io/examples/options").hide()
 			"Digits":
 				$container/io/examples/digits.hide()
 			"Number":
@@ -62,12 +73,12 @@ class_name StylableDialogBox
 
 func _updateExampleArrows():
 	if is_node_ready() or Engine.is_editor_hint():
-		$container/io/examples/digits/Digit1.setTextures(arrow_up, arrow_down, arrow_up_active, arrow_down_active)
+		$container/io/examples/digits/Digit1.setTextures(arrow_up_active, arrow_down_active, arrow_up_active, arrow_down_active)
 		$container/io/examples/digits/Digit2.setTextures(arrow_up, arrow_down, arrow_up_active, arrow_down_active)
 		$container/io/examples/digits/Digit3.setTextures(arrow_up, arrow_down, arrow_up_active, arrow_down_active)
 		$container/io/examples/number/Digit1.setTextures(arrow_up, arrow_down, arrow_up_active, arrow_down_active)
 		$container/io/examples/number/Digit2.setTextures(arrow_up, arrow_down, arrow_up_active, arrow_down_active)
-		$container/io/examples/number/Digit3.setTextures(arrow_up, arrow_down, arrow_up_active, arrow_down_active)
+		$container/io/examples/number/Digit3.setTextures(arrow_up_active, arrow_down_active, arrow_up_active, arrow_down_active)
 
 @export_subgroup("arrows", "arrow_")
 @export var arrow_up: Texture2D = preload("res://addons/ddsl/styledbox/defaultUp.png"):
@@ -87,7 +98,7 @@ func _updateExampleArrows():
 		arrow_down_active = value
 		_updateExampleArrows()
 
-@export_subgroup("Text decorators", "td_")
+@export_group("Text decorators", "td_")
 @export var td_SelectedOption_Left: String = "[color=yellow]":
 	set(value):
 		td_SelectedOption_Left = value
@@ -109,7 +120,7 @@ func _updateExampleArrows():
 		if Engine.is_editor_hint():
 			$"container/io/examples/options/wrapper/2".text = td_UnselectedOption_Left + "No" + td_UnselectedOption_Right
 
-@export_subgroup("Colors", "color_")
+@export_group("Colors", "color_")
 @export var color_selectedDigit: Color = Color.YELLOW:
 	set(value):
 		color_selectedDigit = value
@@ -136,11 +147,12 @@ func _updateExampleArrows():
 		#if Engine.is_editor_hint():
 			#$"container/io/examples/options/wrapper/2".text = td_UnselectedOption_Left + "No" + td_UnselectedDigit_Right
 
+@export_group("Font")
 @export var fontSize: int = 32:
 	set(value):
+		fontSize = value
 		if not is_node_ready():
 			return
-		fontSize = value
 		_setFontSize($container/io/split/output, value)
 		_setFontSize($container/io/examples/output, value)
 		_setFontSize($container/io/examples/digits/Digit1.get_node("digit"), value)
@@ -150,6 +162,7 @@ func _updateExampleArrows():
 		_setFontSize($container/io/examples/number/Digit2.get_node("digit"), value)
 		_setFontSize($container/io/examples/number/Digit3.get_node("digit"), value)
 		$container/io/examples/number/Sign.add_theme_font_size_override("font_size", value)
+		$container/io/examples/number/Sign2.add_theme_font_size_override("font_size", value)
 		$container/io/split/number/sign.add_theme_font_size_override("font_size", value)
 		$container/io/split/number/sign2.add_theme_font_size_override("font_size", value)
 		_setFontSize($"container/io/examples/options/wrapper/1", value)
@@ -316,9 +329,9 @@ func _ready():
 	$container/io/examples.hide()
 	$container/io/split.show()
 
-func _exit_tree():
-	$container/io/examples.show()
-	$container/io/split.hide()
+#func _exit_tree():
+	#$container/io/examples.show()
+	#$container/io/split.hide()
 
 var timer: float = 0.0
 func _process(delta):

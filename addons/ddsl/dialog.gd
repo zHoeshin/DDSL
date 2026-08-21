@@ -16,9 +16,11 @@ var __plugin
 class Message:
 	var type: String
 	var data
-	func _init(t: String, d):
+	var meta
+	func _init(t: String, d = null, m = null):
 		type = t
 		data = d
+		meta = m
 
 static var _globals: Dictionary = {
 	"options": OptionsInput.new(),
@@ -27,8 +29,6 @@ static var _globals: Dictionary = {
 	"digits": DigitsInput.new,
 	"number": NumberInput.new,
 }
-
-var currentBox: DialogBox = null
 
 func bindGlobal(thing: Variant, name: String):
 	_globals[name] = thing
@@ -40,18 +40,21 @@ func getGlobal(name: String, default: Variant = null):
 
 class Options:
 	var constants: Dictionary = {}
-	var canAccessAutoloads: bool = true
+	var autoloadCapability: int = -1
+	var defaultAutoloadCapability: int = -1
 	var canAccessNamedNodes: bool = true
 	var canAccessNodesByPath: bool = false
 	
 	func _init(
 		constants: Dictionary = {},
-		canAccessAutoloads: bool = true,
+		autoloadCapability: int = -1,
+		defaultAutoloadCapability: int = -1,
 		canAccessNamedNodes: bool = true,
 		canAccessNodesByPath: bool = false,
 	):
 		self.constants = constants
-		self.canAccessAutoloads = canAccessAutoloads
+		self.autoloadCapability = autoloadCapability
+		self.defaultAutoloadCapability = defaultAutoloadCapability
 		self.canAccessNamedNodes = canAccessNamedNodes
 		self.canAccessNodesByPath = canAccessNodesByPath
 
@@ -73,16 +76,20 @@ func start(dialog: String, options: Options = null, variables: Dictionary = {}, 
 	var interpreter = _Interpreter.new({})
 	interpreter.variables = variables.duplicate()
 	if options != null:
-		if options.constants != null:
-			interpreter.constants = options.constants
-		interpreter.canAccessAutoloads = options.canAccessAutoloads
-		interpreter.canAccessNamedNodes = options.canAccessNamedNodes
-		interpreter.canAccessNodesByPath = options.canAccessNodesByPath
-	var r = await interpreter.start(parsed)
+		interpreter.options = options
+	else:
+		interpreter.options = Options.new()
+	var r = await interpreter.start(parsed, {})
 	if r != null:
 		if r is Message:
 			if r.type == "goto":
-				push_error("Trying to jump to a non-existant label " + str(r.data))
+				push_error("Trying to jump to a non-existant label " + str(r.data) + " at " + str(r.data.y + 1) + ":" + str(r.data.x + 1))
+			elif r.type == "break":
+				push_error("Break statement outside a loop at " + str(r.data.y + 1) + ":" + str(r.data.x + 1))
+			elif r.type == "continue":
+				push_error("Continue statement outside a loop at " + str(r.data.y + 1) + ":" + str(r.data.x + 1))
+			if r.type == "exit":
+				pass
 	if callback.is_valid():
 		callback.call(interpreter.variables)
 	dialogEnded.emit()
@@ -101,25 +108,62 @@ func startFromSource(source: String, options: Options = null, variables: Diction
 	var interpreter = _Interpreter.new({})
 	interpreter.variables = variables.duplicate()
 	if options != null:
-		if options.constants != null:
-			interpreter.constants = options.constants
-		interpreter.canAccessAutoloads = options.canAccessAutoloads
-	var r = await interpreter.start(parsed)
+		interpreter.options = options
+	else:
+		interpreter.options = Options.new()
+	var r = await interpreter.start(parsed, {})
 	if r != null:
 		if r is Message:
 			if r.type == "goto":
-				push_error("Trying to jump to a non-existant label " + str(r.data))
+				push_error("Trying to jump to a non-existant label " + str(r.data) + " at " + str(r.data.y + 1) + ":" + str(r.data.x + 1))
+			elif r.type == "break":
+				push_error("Break statement outside a loop at " + str(r.data.y + 1) + ":" + str(r.data.x + 1))
+			elif r.type == "continue":
+				push_error("Continue statement outside a loop at " + str(r.data.y + 1) + ":" + str(r.data.x + 1))
+			if r.type == "exit":
+				pass
 	dialogEnded.emit()
 	return interpreter.variables
+
+
+
+var currentBox: DialogBox = null
+var boxStack: Array[DialogBox] = []
 
 ## Sets the current dialog box style[br][br]
 ## [code]box[/code]: The dialog box style. Must be an instantiated scene[br]
 func setBox(box: DialogBox):
 	for child in get_children():
-		child.queue_free()
+		remove_child(child)
+	if currentBox != null:
+		currentBox.queue_free()
+	if box == null:
+		box = load("res://addons/ddsl/styledbox/StylableDialogBox.tscn").instantiate()
 	add_child(box)
 	box.hide()
 	currentBox = box
+func pushBox(box: DialogBox):
+	for child in get_children():
+		remove_child(child)
+	boxStack.push_back(currentBox)
+	if box == null:
+		box = load("res://addons/ddsl/styledbox/StylableDialogBox.tscn").instantiate()
+	add_child(box)
+	box.hide()
+	currentBox = box
+func popBox(box: DialogBox):
+	for child in get_children():
+		remove_child(child)
+	if currentBox != null:
+		currentBox.queue_free()
+		currentBox = null
+	currentBox = boxStack.pop_back()
+	if currentBox == null:
+		currentBox = box
+	if currentBox == null:
+		currentBox = load("res://addons/ddsl/styledbox/StylableDialogBox.tscn").instantiate()
+	add_child(currentBox)
+	currentBox.hide()
 
 func _enter_tree():
 	_tokenize = preload("res://addons/ddsl/utils/tokenizer.gd").tokenize

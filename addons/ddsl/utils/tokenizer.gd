@@ -23,7 +23,7 @@ static var tokenspecs = [
 	[regex(r"""%(["'])(?:(?=(\\?))\2.|[^\1\\])*?\1"""), "varuniquenode", -1, func(s: String): return s.substr(2, len(s) - 3)],
 	[regex(r"\$[\p{L}\p{N}\\_\/]+"), "varnode", -1, func(s: String): return s.substr(1, len(s))],
 	[regex(r"""\$(["'])(?:(?=(\\?))\2.|[^\1\\])*?\1"""), "varnode", -1, func(s: String): return s.substr(2, len(s) - 3)],
-	[regex(r"((\btr\b)(\bas\b)|(\bawait\b)|(\bif\b)|(\belif\b)|(\belse\b)|(\bmatch\b)|(\bcase\b)|(\bwhile\b)|(\bbreak\b)|(\bcontinue\b)|(\bexit\b)|(\bas\b)|\|->|\|<-|--|->|\+|\/|-|<=|<-|:|,|\.|>=|&|\||\^|==|!=|>|<|=|\*\*|\?\!|\?|\/\/|\*\/|\*|\/|;|%)(=?)"), "op", -1, null],
+	[regex(r"((\btr\b)(\bas\b)|(\bawait\b)|(\bif\b)|(\belif\b)|(\belse\b)|(\bmatch\b)|(\bcase\b)|(\bwhile\b)|(\bbreak\b)|(\bcontinue\b)|(\bexit\b)|(\bas\b)|(\bfor\b)|\|->|\|<-|--|->|\+|\/|-|<=|<-|:|,|\.|>=|&|\||\^|==|!=|>|<|=|\*\*|\?\!|\?|\/\/|\*\/|\*|\/|;|%)(=?)"), "op", -1, null],
 	[regex(r"[\p{L}_][\p{L}\p{N}_]*"), "varid", -1, null],
 	[regex(r"[\(\)\[\]\{\}]"), "bracket", -1, null],
 	[regex("r\n"), "newline", -1, null],
