@@ -50,7 +50,7 @@ Dialog.setBox(someDialogBoxScene)
 Dialog.bindGlobal(InventoryManager, "Inventory")
 
 # This will start the dialog without blocking current execution, executing _dialog_callback after the dialog finishes
-Dialog.start("res://path/to/dialog.ddsl", _dialog_callback)
+Dialog.start("res://path/to/dialog.ddsl", null, {}, _dialog_callback)
 
 # Current execution will be paused for the duration of the dialog
 # `value` will be assigned to a dictionary containing all variables created during script execution
