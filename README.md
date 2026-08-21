@@ -1,6 +1,6 @@
 <img src="icon.svg" alt="icon" width="120">
 
-DDSL is a dialog manager plugin for [Godot 4.6+](https://godotengine.org/), using scripts with integration with the GDScript system
+DialogueDSL is a dialogue manager plugin for [Godot 4.6+](https://godotengine.org/), using scripts with integration with the GDScript system
 
 ## Installation
 - Copy the folder `addons/ddsl` from this repository into your Godot project's `addons/` folder
@@ -12,7 +12,7 @@ DDSL is a dialog manager plugin for [Godot 4.6+](https://godotengine.org/), usin
 Full installation guide can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/01-Home)
 
 ## Basic usage
-Dialog scripts can be created anywhere within the game's project folder. For this, create a text file, and end it with `.ddsl`, then fill it with the dialog, for example
+Dialogue scripts can be created anywhere within the game's project folder. For this, create a text file, and end it with `.ddsl`, then fill it with the dialog, for example
 ```ddsl
 edwin = ^"res://sprites/portraits/edwin.png"
 edwin: "Hello, little rover. Are you lost?" { autoconfirm = true }
@@ -38,21 +38,21 @@ edwin: "Hello, little rover. Are you lost?" { autoconfirm = true }
 
 Information about the domain-specific language can be found on the [wiki](https://github.com/zHoeshin/DDSL/wiki/...)
 
-Note that the language focuses on programmer-styled dialog description rather than a writer-style one. It is also not intended for creating monolithic dialogs carrying the entire story(i.e. it is not made for visual novels)
+Note that the language focuses on programmer-styled dialogue description rather than a writer-style one. It is also not intended for creating monolithic dialogues carrying the entire story(i.e. it is not made for visual novels)
 
-Once a dialog file is created, it can be executed in-game in two primary ways
+Once a dialogue file is created, it can be executed in-game in two primary ways
 ```gdscript
-# Note that there is no default dialog box provided so Dialog will error during execution if one is not explicitly set
+# Note that there is no default dialogue box provided so Dialog will error during execution if one is not explicitly set
 Dialog.setBox(someDialogBoxScene)
 
-# The main way the dialogs can interact with GDScript is via explicit object bindings
-# Global bindings are permanent between all dialog calls
+# The main way the dialogues can interact with GDScript is via explicit object bindings
+# Global bindings are permanent between all dialogue calls
 Dialog.bindGlobal(InventoryManager, "Inventory")
 
-# This will start the dialog without blocking current execution, executing _dialog_callback after the dialog finishes
+# This will start the dialogue without blocking current execution, executing _dialog_callback after the dialogue finishes
 Dialog.start("res://path/to/dialog.ddsl", null, {}, _dialog_callback)
 
-# Current execution will be paused for the duration of the dialog
+# Current execution will be paused for the duration of the dialogue
 # `value` will be assigned to a dictionary containing all variables created during script execution
 var vars = await Dialog.start("res://path/to/dialog.ddsl")
 ```
@@ -60,9 +60,14 @@ var vars = await Dialog.start("res://path/to/dialog.ddsl")
 Full usage instructions can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/02-Using-DDSL)
 
 ## Features
-- Integration with GDScript, including native calls to built-in methods
-- Operator overloading possible within the DSL
-- Unboundedly nested branching options without forced use of `goto` statements
+- built-in syntax highlighting for `.ddsl` dialogue scripts
+- translation support
+- no dependencies
+- integration with GDScript
+- built-in UI with simple customization
+- simple interface for creating dialogue UI
+- custom input types creation
+- structured branching over jumping
 
 ## Documentation
 The documentation for the plugin is hosted on the [Github Wiki](https://github.com/zHoeshin/DDSL/wiki) of the repository
