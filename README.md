@@ -9,7 +9,9 @@ DialogueDSL is a dialogue manager plugin for [Godot 4.6+](https://godotengine.or
 - The `Dialog` singleton should be now accessible in the code and `dialog_*` input map actions should be added
 - If this is not the case, reload the project
 - Add appropriate controls to the `dialog_*` actions in `Project > Project settings` under the `Input map` tab
-Full installation guide can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/01-Home)
+
+## Documentation
+https://dialoguedsl.readthedocs.io/
 
 ## Basic usage
 Dialogue scripts can be created anywhere within the game's project folder. For this, create a text file, and end it with `.ddsl`, then fill it with the dialog, for example
@@ -36,8 +38,6 @@ edwin: "Hello, little rover. Are you lost?" { autoconfirm = true }
     Cutscenes.trigger("edwinTavernWalk")
 ```
 
-Information about the domain-specific language can be found on the [wiki](https://github.com/zHoeshin/DDSL/wiki/...)
-
 Note that the language focuses on programmer-styled dialogue description rather than a writer-style one. It is also not intended for creating monolithic dialogues carrying the entire story(i.e. it is not made for visual novels)
 
 Once a dialogue file is created, it can be executed in-game in two primary ways
@@ -57,8 +57,6 @@ Dialog.start("res://path/to/dialog.ddsl", null, {}, _dialog_callback)
 var vars = await Dialog.start("res://path/to/dialog.ddsl")
 ```
 
-Full usage instructions can be found in the [wiki](https://github.com/zHoeshin/DDSL/wiki/02-Using-DDSL)
-
 ## Features
 - built-in syntax highlighting for `.ddsl` dialogue scripts
 - translation support
@@ -68,6 +66,3 @@ Full usage instructions can be found in the [wiki](https://github.com/zHoeshin/D
 - simple interface for creating dialogue UI
 - custom input types creation
 - structured branching over jumping
-
-## Documentation
-The documentation for the plugin is hosted on the [Github Wiki](https://github.com/zHoeshin/DDSL/wiki) of the repository
